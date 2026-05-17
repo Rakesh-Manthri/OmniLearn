@@ -1,10 +1,40 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { BookOpen, BrainCircuit, Focus, Network, Zap, Clock } from 'lucide-react';
+import {
+  BookOpen,
+  BrainCircuit,
+  Focus,
+  Network,
+  Zap,
+  Clock
+} from 'lucide-react';
+
 import gsap from 'gsap';
 import Lenis from 'lenis';
 import 'lenis/dist/lenis.css';
 
+import { supabase } from './lib/supabase';
+
+/* ================= RAG ADDITIONS ================= */
+import * as pdfjsLib from "pdfjs-dist";
+import OpenAI from "openai";
+
+/* OpenAI */
+const openai = new OpenAI({
+  apiKey: import.meta.env.VITE_OPENAI_KEY,
+  dangerouslyAllowBrowser: true,
+});
+
+/* chunk helper */
+const chunkText = (text, size = 1000) => {
+  const chunks = [];
+  for (let i = 0; i < text.length; i += size) {
+    chunks.push(text.slice(i, i + size));
+  }
+  return chunks;
+};
+
+/* ================= UI COMPONENTS (UNCHANGED) ================= */
 const FeatureCard = ({ title, icon: Icon, description, index }) => (
   <motion.div
     initial={{ opacity: 0, y: 20 }}
@@ -16,163 +46,367 @@ const FeatureCard = ({ title, icon: Icon, description, index }) => (
     <div className="bg-purple-500/20 w-12 h-12 rounded-lg flex items-center justify-center mb-4 border border-purple-500/30">
       <Icon className="text-purple-400 w-6 h-6" />
     </div>
-    <h3 className="text-xl font-semibold mb-2 text-white">{title}</h3>
-    <p className="text-slate-300 text-sm leading-relaxed">{description}</p>
+
+    <h3 className="text-xl font-semibold mb-2 text-white">
+      {title}
+    </h3>
+
+    <p className="text-slate-300 text-sm leading-relaxed">
+      {description}
+    </p>
   </motion.div>
 );
 
 const ModelCard = ({ model, purpose, strategy }) => (
-  <motion.div 
+  <motion.div
     initial={{ opacity: 0, scale: 0.95 }}
     whileInView={{ opacity: 1, scale: 1 }}
     transition={{ duration: 0.5 }}
     className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-6 relative overflow-hidden group"
   >
     <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 to-pink-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-    <h4 className="text-purple-400 font-mono text-sm mb-2">{model}</h4>
-    <h3 className="text-lg font-semibold text-white mb-3">{purpose}</h3>
-    <p className="text-slate-400 text-sm">{strategy}</p>
+
+    <h4 className="text-purple-400 font-mono text-sm mb-2">
+      {model}
+    </h4>
+
+    <h3 className="text-lg font-semibold text-white mb-3">
+      {purpose}
+    </h3>
+
+    <p className="text-slate-400 text-sm">
+      {strategy}
+    </p>
   </motion.div>
 );
 
 export default function App() {
-  useEffect(() => {
-    const lenis = new Lenis({
-      autoRaf: false,
-    });
 
-    // Synchronize GSAP ticker with Lenis
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [currentUser, setCurrentUser] = useState(null);
+
+  const [loading, setLoading] = useState(false);
+
+  /* RAG STATES */
+  const [query, setQuery] = useState("");
+  const [answer, setAnswer] = useState("");
+
+  useEffect(() => {
+
+    const lenis = new Lenis({ autoRaf: false });
+
     gsap.ticker.add((time) => {
       lenis.raf(time * 1000);
     });
-    
-    gsap.ticker.lagSmoothing(0);
 
-    return () => {
-      lenis.destroy();
-    };
+    checkUser();
+
+    return () => lenis.destroy();
   }, []);
 
+  /* ================= AUTH ================= */
+  const checkUser = async () => {
+    const { data } = await supabase.auth.getUser();
+    setCurrentUser(data.user);
+  };
+
+  const signUpUser = async () => {
+    const { error } = await supabase.auth.signUp({ email, password });
+    if (error) return alert(error.message);
+    alert("Signup successful!");
+  };
+
+  const loginUser = async () => {
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (error) return alert(error.message);
+
+    setCurrentUser(data.user);
+    alert("Login successful!");
+  };
+
+  const logoutUser = async () => {
+    await supabase.auth.signOut();
+    setCurrentUser(null);
+  };
+
+  /* ================= STEP 1–3: UPLOAD + EMBEDDINGS ================= */
+  const uploadFile = async (event) => {
+
+    const file = event.target.files[0];
+    if (!file) return;
+
+    setLoading(true);
+
+    try {
+
+      const fileName = `${Date.now()}-${file.name}`;
+
+      await supabase.storage
+        .from('documents')
+        .upload(`files/${fileName}`, file);
+
+      const { data } = supabase.storage
+        .from('documents')
+        .getPublicUrl(`files/${fileName}`);
+
+      const fileUrl = data.publicUrl;
+
+      const pdf = await pdfjsLib.getDocument(fileUrl).promise;
+
+      let text = "";
+
+      for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i);
+        const content = await page.getTextContent();
+        text += content.items.map(item => item.str).join(" ");
+      }
+
+      const chunks = chunkText(text, 1000);
+
+      for (let chunk of chunks) {
+
+        const res = await openai.embeddings.create({
+          model: "text-embedding-3-small",
+          input: chunk,
+        });
+
+        const vector = res.data[0].embedding;
+
+        await supabase.from("embeddings").insert({
+          content: chunk,
+          embedding: vector,
+        });
+      }
+
+      alert("File processed successfully!");
+
+    } catch (err) {
+      console.error(err);
+      alert("Error processing file");
+    }
+
+    setLoading(false);
+  };
+
+  /* ================= STEP 4: RAG QUERY ================= */
+  const askAI = async () => {
+
+    if (!query) return;
+
+    setAnswer("Thinking...");
+
+    const embed = await openai.embeddings.create({
+      model: "text-embedding-3-small",
+      input: query,
+    });
+
+    const queryVector = embed.data[0].embedding;
+
+    const { data: matches } = await supabase.rpc("match_documents", {
+      query_embedding: queryVector,
+      match_threshold: 0.78,
+      match_count: 5,
+    });
+
+    const context = matches.map(m => m.content).join("\n");
+
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [
+        {
+          role: "system",
+          content: "Answer strictly using provided context."
+        },
+        {
+          role: "user",
+          content: `Context:\n${context}\n\nQuestion:\n${query}`
+        }
+      ]
+    });
+
+    setAnswer(completion.choices[0].message.content);
+  };
+
   return (
-    <div className="min-h-screen bg-[#0f1115] text-slate-200 selection:bg-purple-500/30 font-sans">
-      {/* Background Effects */}
+    <div className="min-h-screen bg-[#0f1115] text-slate-200 font-sans">
+
+      {/* BACKGROUND */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-purple-600/20 blur-[120px] rounded-full mix-blend-screen" />
         <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-pink-600/20 blur-[120px] rounded-full mix-blend-screen" />
       </div>
 
       <div className="relative max-w-7xl mx-auto px-6 py-20">
-        
-        {/* Hero Section */}
-        <motion.section 
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8 }}
-          className="text-center py-20"
-        >
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full glass-panel text-sm text-purple-300 mb-8 border-purple-500/30">
-            <Zap className="w-4 h-4" />
-            <span>Gemma 4 Impact Challenge • Future of Education</span>
+
+        {/* ================= AUTH ================= */}
+        <div className="glass-panel rounded-3xl p-8 mb-16 border border-purple-500/20">
+
+          <h2 className="text-3xl font-bold text-center text-white mb-8">
+            OmniLearn Authentication
+          </h2>
+
+          <div className="flex flex-col gap-4 items-center mb-8">
+
+            <input
+              type="email"
+              placeholder="Enter Email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="px-4 py-3 rounded-xl bg-slate-800 w-full max-w-md"
+            />
+
+            <input
+              type="password"
+              placeholder="Enter Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="px-4 py-3 rounded-xl bg-slate-800 w-full max-w-md"
+            />
+
           </div>
-          <h1 className="text-5xl md:text-7xl font-bold mb-6 tracking-tight text-white">
-            Meet <span className="gradient-text">OmniLearn</span>
-          </h1>
-          <p className="text-xl md:text-2xl text-slate-400 max-w-3xl mx-auto font-light leading-relaxed mb-10">
-            An all-in-one personalized environment for autonomous learners. Merging curriculum planning, an active agentic tutor, and a privacy-first focus room to preserve your flow state.
+
+          <div className="flex gap-4 justify-center">
+            <button onClick={signUpUser} className="bg-green-500 px-6 py-2 rounded-full">Sign Up</button>
+            <button onClick={loginUser} className="bg-blue-500 px-6 py-2 rounded-full">Login</button>
+            <button onClick={logoutUser} className="bg-red-500 px-6 py-2 rounded-full">Logout</button>
+          </div>
+
+          <p className="text-center mt-6 text-slate-300">
+            {currentUser ? `Logged in: ${currentUser.email}` : "No user logged in"}
           </p>
-          <div className="flex justify-center gap-4">
-            <button className="bg-white text-black px-8 py-3 rounded-full font-medium hover:bg-slate-200 transition-colors">
-              Start Learning
-            </button>
-            <button className="glass-panel px-8 py-3 rounded-full font-medium hover:bg-white/10 transition-colors text-white">
-              View Architecture
-            </button>
+        </div>
+
+        {/* ================= UPLOAD ================= */}
+        <div className="glass-panel rounded-3xl p-8 mb-20 border border-purple-500/20">
+
+          <h2 className="text-3xl font-bold text-center text-white mb-6">
+            Upload Study Materials
+          </h2>
+
+          <div className="flex justify-center">
+            <input type="file" onChange={uploadFile} />
           </div>
+
+          {loading && (
+            <p className="text-center text-yellow-400 mt-4">
+              Processing PDF for AI search...
+            </p>
+          )}
+        </div>
+
+        {/* ================= HERO ================= */}
+        <motion.section className="text-center py-20">
+          <h1 className="text-5xl font-bold text-white">
+            Meet <span className="text-purple-400">OmniLearn</span>
+          </h1>
+
+          <p className="text-slate-400 mt-6 max-w-2xl mx-auto">
+            AI-powered personalized learning system with RAG intelligence.
+          </p>
         </motion.section>
 
-        {/* Core Features */}
-        <section className="py-20">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4 text-white">Core Modules</h2>
-            <p className="text-slate-400">Everything you need to deeply master a topic in one unified workspace.</p>
-          </div>
-          
-          <div className="grid md:grid-cols-3 gap-6">
-            <FeatureCard 
-              index={0}
-              icon={BookOpen}
-              title="Course Generator & Curriculum Planner"
-              description="Transforms raw user goals or dense reference materials into structured pathways. Ingest massive textbooks and let the system map out chunked, logical, multi-week learning nodes."
-            />
-            <FeatureCard 
-              index={1}
-              icon={BrainCircuit}
-              title="The Intelligent AI Guider"
-              description="An active, always-on mentor attached to your current learning node. It utilizes retrieval-grounded Q&A and native function calling to trigger flashcards, pop-quizzes, and scrape supplementary external knowledge."
-            />
-            <FeatureCard 
-              index={2}
-              icon={Focus}
-              title="The Focus Room & Study Space"
-              description="A minimalist, distraction-free environment. Features native Pomodoro timers and a local offline companion running purely in-browser via WebGPU, ensuring absolute data privacy."
-            />
-          </div>
+        {/* ================= FEATURES ================= */}
+        <section className="py-20 grid md:grid-cols-3 gap-6">
+
+          <FeatureCard index={0} icon={BookOpen} title="Curriculum Planner"
+            description="Build structured learning paths" />
+
+          <FeatureCard index={1} icon={BrainCircuit} title="AI Tutor"
+            description="Context-aware assistant" />
+
+          <FeatureCard index={2} icon={Focus} title="Focus Mode"
+            description="Distraction-free learning" />
+
         </section>
 
-        {/* Architecture Details */}
-        <section className="py-20 relative">
-          <div className="glass-panel rounded-3xl p-8 md:p-12">
-            <div className="text-center mb-12">
-              <h2 className="text-3xl md:text-4xl font-bold mb-4 text-white">Intelligent Gemma 4 Architecture</h2>
-              <p className="text-slate-400 max-w-2xl mx-auto">
-                Cleanly splitting the workload among specialized models to maximize efficiency and minimize infrastructure overhead.
-              </p>
-            </div>
+        {/* ================= ARCHITECTURE ================= */}
+        <section className="py-20">
+
+          <div className="glass-panel rounded-3xl p-10">
+
+            <h2 className="text-3xl font-bold text-white text-center mb-10">
+              Intelligent Architecture
+            </h2>
 
             <div className="grid md:grid-cols-3 gap-6">
-              <ModelCard 
-                model="Gemma 4 31B Dense"
-                purpose="Syllabus Mapping & Ingestion"
-                strategy="Leverages the massive 256K context window to ingest large textbooks and produce structured, hallucination-free weekly curricula."
-              />
-              <ModelCard 
-                model="Gemma 4 26B A4B MoE"
-                purpose="The AI Guider (Tutor)"
-                strategy="Utilizes high-speed token generation for real-time, fluid conversations and rapid native function calling."
-              />
-              <ModelCard 
-                model="Gemma 4 E4B / E2B"
-                purpose="Focus Room Companion"
-                strategy="Runs entirely client-side via WebGPU/LiteRT-LM. Processes local inputs with zero network latency and strict privacy."
-              />
+
+              <ModelCard model="Gemma 4" purpose="Learning Engine"
+                strategy="Processes knowledge" />
+
+              <ModelCard model="MoE Model" purpose="AI Tutor"
+                strategy="Real-time reasoning" />
+
+              <ModelCard model="Edge Model" purpose="Focus Mode"
+                strategy="Runs locally" />
+
             </div>
+
           </div>
         </section>
 
-        {/* Wow Factor */}
-        <section className="py-20 text-center max-w-4xl mx-auto">
-          <h2 className="text-3xl font-bold mb-10 text-white">The "Wow" Factor</h2>
+        {/* ================= WOW FACTOR ================= */}
+        <section className="py-20 text-center">
+
+          <h2 className="text-3xl font-bold text-white mb-10">
+            The "Wow" Factor
+          </h2>
+
           <div className="grid md:grid-cols-2 gap-8 text-left">
-            <div className="glass-panel p-8 rounded-2xl border-l-4 border-l-pink-500">
-              <h3 className="text-xl font-bold mb-3 flex items-center gap-2 text-white">
-                <Network className="text-pink-400" />
-                True Hybrid Architecture
+
+            <div className="glass-panel p-8 border-l-4 border-pink-500">
+              <h3 className="text-xl font-bold flex gap-2 items-center">
+                <Network /> Hybrid AI System
               </h3>
-              <p className="text-slate-400 leading-relaxed">
-                Seamlessly balances serverless cloud computation for massive 256K context mapping with local edge deployment for zero-latency, private voice companion interactions.
+              <p className="text-slate-400 mt-2">
+                Cloud + local AI collaboration
               </p>
             </div>
-            <div className="glass-panel p-8 rounded-2xl border-l-4 border-l-yellow-500">
-              <h3 className="text-xl font-bold mb-3 flex items-center gap-2 text-white">
-                <Clock className="text-yellow-400" />
-                Contextual Continuity
+
+            <div className="glass-panel p-8 border-l-4 border-yellow-500">
+              <h3 className="text-xl font-bold flex gap-2 items-center">
+                <Clock /> Memory Continuity
               </h3>
-              <p className="text-slate-400 leading-relaxed">
-                The AI Tutor possesses long-term contextual memory of the student's exact learning progress, completely eliminating the need to re-prompt or switch apps.
+              <p className="text-slate-400 mt-2">
+                AI remembers uploaded knowledge
               </p>
             </div>
+
           </div>
         </section>
+
+        {/* ================= RAG Q&A ================= */}
+        <div className="glass-panel rounded-3xl p-8 mt-20 border border-purple-500/20">
+
+          <h2 className="text-2xl font-bold text-center mb-4">
+            Ask Your Documents (RAG AI)
+          </h2>
+
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Ask something..."
+            className="w-full p-3 rounded bg-slate-800 text-white"
+          />
+
+          <button
+            onClick={askAI}
+            className="mt-4 bg-purple-600 px-6 py-2 rounded-full"
+          >
+            Ask AI
+          </button>
+
+          {answer && (
+            <div className="mt-6 p-4 bg-slate-800 rounded">
+              {answer}
+            </div>
+          )}
+
+        </div>
 
       </div>
     </div>

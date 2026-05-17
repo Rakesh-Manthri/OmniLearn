@@ -54,6 +54,12 @@ venv.bak/
 .DS_Store
 Thumbs.db
 
+# Vercel
+.vercel/
+
+# Coverage
+coverage/
+
 # IDEs & Code Editors
 .vscode/
 !.vscode/extensions.json

@@ -1,36 +1,69 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import styles from './page.module.css';
-import { 
-  BookOpen, 
-  BrainCircuit, 
-  Timer, 
-  LayoutDashboard, 
-  MessageSquare, 
-  Settings, 
-  Search,
-  Sparkles,
-  Play,
-  Send,
-  Zap,
-  UploadCloud,
-  Headphones,
-  Coffee,
-  Volume2,
-  Sun,
-  Moon,
-  Lock,
-  ChevronLeft,
-  ChevronRight
-} from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
+import { useRouter } from 'next/navigation';
+import { motion } from 'framer-motion';
+import gsap from 'gsap';
+import Lenis from 'lenis';
+import 'lenis/dist/lenis.css';
+import { BookOpen, BrainCircuit, Focus, Network, Zap, Clock, Sparkles, Lock, Sun, Moon } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
-export default function Home() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [activeTab, setActiveTab] = useState('dashboard');
+const FeatureCard = ({ title, icon: Icon, description, index }: any) => (
+  <motion.div
+    initial={{ opacity: 0, y: 20 }}
+    whileInView={{ opacity: 1, y: 0 }}
+    transition={{ duration: 0.5, delay: index * 0.1 }}
+    viewport={{ once: true }}
+    className="glass-panel rounded-2xl p-6 hover:bg-white/10 dark:hover:bg-white/5 transition-colors duration-300 border border-border"
+  >
+    <div className="bg-primary/20 w-12 h-12 rounded-lg flex items-center justify-center mb-4 border border-primary/30">
+      <Icon className="text-primary w-6 h-6" />
+    </div>
+    <h3 className="text-xl font-semibold mb-2 text-foreground">{title}</h3>
+    <p className="text-muted-foreground text-sm leading-relaxed">{description}</p>
+  </motion.div>
+);
+
+const ModelCard = ({ model, purpose, strategy }: any) => (
+  <motion.div 
+    initial={{ opacity: 0, scale: 0.95 }}
+    whileInView={{ opacity: 1, scale: 1 }}
+    transition={{ duration: 0.5 }}
+    className="bg-card/50 border border-border rounded-xl p-6 relative overflow-hidden group"
+  >
+    <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-accent/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+    <h4 className="text-primary font-mono text-sm mb-2">{model}</h4>
+    <h3 className="text-lg font-semibold text-foreground mb-3">{purpose}</h3>
+    <p className="text-muted-foreground text-sm">{strategy}</p>
+  </motion.div>
+);
+
+export default function LandingPage() {
+  const { user, loading, signIn, signUp } = useAuth();
+  const router = useRouter();
+  const [showLogin, setShowLogin] = useState(false);
   const [isLightMode, setIsLightMode] = useState(false);
-  const [showLoginModal, setShowLoginModal] = useState(false);
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [authLoading, setAuthLoading] = useState(false);
+  const [isSignUp, setIsSignUp] = useState(false);
+
+  useEffect(() => {
+    if (!loading && user) {
+      router.push('/dashboard');
+    }
+  }, [user, loading, router]);
+
+  useEffect(() => {
+    // Check initial dark mode from DOM
+    if (document.documentElement.classList.contains('light-theme')) {
+      setIsLightMode(true);
+    }
+  }, []);
 
   useEffect(() => {
     if (isLightMode) {
@@ -40,401 +73,287 @@ export default function Home() {
     }
   }, [isLightMode]);
 
-  const toggleTheme = () => setIsLightMode(!isLightMode);
+  useEffect(() => {
+    const lenis = new Lenis({
+      autoRaf: false,
+    });
+    // Synchronize GSAP ticker with Lenis
+    gsap.ticker.add((time) => {
+      lenis.raf(time * 1000);
+    });
+    
+    gsap.ticker.lagSmoothing(0);
+    return () => {
+      lenis.destroy();
+    };
+  }, []);
 
-  if (!isAuthenticated) {
-    return (
-      <div className={styles.landingContainer}>
-        <div className={styles.blob1}></div>
-        <div className={styles.blob2}></div>
-        
-        <header className={styles.landingHeader}>
-          <div className={styles.logo}>
-            <div className={styles.logoIcon}>
-              <Sparkles size={18} />
-            </div>
-            Gemma
-          </div>
-          <button className={styles.themeToggle} onClick={toggleTheme} aria-label="Toggle theme">
-            {isLightMode ? <Moon size={20} /> : <Sun size={20} />}
-          </button>
-        </header>
+  const handleAuth = async () => {
+    if (!email || !password) return;
+    setAuthLoading(true);
+    try {
+      if (isSignUp) {
+        const { error } = await signUp(email, password);
+        if (error) { alert(error.message); return; }
+        alert('Signup successful! You can now log in.');
+        setIsSignUp(false);
+      } else {
+        const { error } = await signIn(email, password);
+        if (error) { alert(error.message); return; }
+      }
+    } finally {
+      setAuthLoading(false);
+    }
+  };
 
-        {/* Hero Section */}
-        <section className={styles.heroSection}>
-          <h1 className={styles.landingTitle}>
-            Master Complex Topics,<br/>
-            <span className="gradient-text" style={{ background: 'linear-gradient(135deg, var(--accent-primary), var(--accent-tertiary))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-              Without the Friction
-            </span>
-          </h1>
-          
-          <button className={styles.triggerLoginBtn} onClick={() => setShowLoginModal(true)}>
-            <Lock size={18} /> Login to Workspace
-          </button>
+  const scrollToArchitecture = () => {
+    const el = document.getElementById('architecture');
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
 
-          <div className={styles.scrollIndicator}>
-            <span>Scroll to discover</span>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M12 5v14M19 12l-7 7-7-7"/>
-            </svg>
-          </div>
-        </section>
-
-        {/* Description Section */}
-        <section className={styles.descSection}>
-          <h2 style={{ fontSize: '2.5rem', marginBottom: '2rem', fontFamily: 'var(--font-heading)' }}>The Paradox of Choice</h2>
-          <p className={styles.landingDesc}>
-            Self-directed online learning promises infinite knowledge but delivers zero structure. Students today face a massive "paradox of choice". Gemma Study Sphere eliminates cognitive friction by unifying your AI idea generation, focus timers, study roadmaps, and resources into one cohesive flow state.
-          </p>
-        </section>
-
-        {/* Login Modal Overlay */}
-        {showLoginModal && (
-          <div className={styles.modalOverlay} onClick={() => setShowLoginModal(false)}>
-            <div className={styles.loginCard} onClick={(e) => e.stopPropagation()}>
-              <button className={styles.closeModalBtn} onClick={() => setShowLoginModal(false)}>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <line x1="18" y1="6" x2="6" y2="18"></line>
-                  <line x1="6" y1="6" x2="18" y2="18"></line>
-                </svg>
-              </button>
-              
-              <h2 style={{ fontSize: '1.75rem', marginBottom: '2rem', fontFamily: 'var(--font-heading)', textAlign: 'center' }}>Welcome Back</h2>
-              
-              <div className={styles.formGroup}>
-                <label className={styles.formLabel}>Email</label>
-                <input type="email" className={styles.inputField} placeholder="alex@example.com" />
-              </div>
-              <div className={styles.formGroup}>
-                <label className={styles.formLabel}>Password</label>
-                <input type="password" className={styles.inputField} placeholder="••••••••" />
-              </div>
-              <button className={styles.loginBtn} onClick={() => setIsAuthenticated(true)}>
-                Authenticate
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
-    );
-  }
+  if (loading) return null;
+  if (user) return null;
 
   return (
-    <div className={styles.container}>
-      {/* Sidebar Navigation */}
-      <aside className={`${styles.sidebar} ${isSidebarCollapsed ? styles.collapsed : ''}`}>
-        <button 
-          className={styles.sidebarToggleBtn} 
-          onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-        >
-          {isSidebarCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
-        </button>
+    <div className="relative min-h-screen bg-background text-foreground selection:bg-primary/30 font-body transition-colors duration-700 overflow-x-hidden">
+      {/* Background Effects */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
+        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/20 blur-[120px] rounded-full mix-blend-multiply dark:mix-blend-screen animate-float" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-accent/20 blur-[120px] rounded-full mix-blend-multiply dark:mix-blend-screen animate-float" style={{ animationDirection: 'reverse', animationDuration: '25s' }} />
+      </div>
 
-        <div className={styles.logo}>
-          <div className={styles.logoIcon}>
+      {/* Header */}
+      <header className="fixed top-0 z-50 flex w-full items-center justify-between px-8 md:px-16 py-6 bg-gradient-to-b from-background/80 to-transparent backdrop-blur-md border-b border-border/50">
+        <div className="flex items-center gap-3 font-heading text-2xl font-bold tracking-tight">
+          <div className="flex h-9 w-9 items-center justify-center rounded-[10px] bg-gradient-to-br from-primary to-accent-tertiary text-white shadow-sm">
             <Sparkles size={18} />
           </div>
-          <span className={styles.logoText}>Gemma</span>
+          OmniLearn
         </div>
-        
-        <nav className={styles.nav}>
-          <a href="#" className={`${styles.navItem} ${activeTab === 'dashboard' ? styles.navItemActive : ''}`} onClick={(e) => { e.preventDefault(); setActiveTab('dashboard'); }}>
-            <LayoutDashboard size={20} style={{ minWidth: 20 }} />
-            <span className={styles.navText}>Dashboard</span>
-          </a>
-          <a href="#" className={`${styles.navItem} ${activeTab === 'course' ? styles.navItemActive : ''}`} onClick={(e) => { e.preventDefault(); setActiveTab('course'); }}>
-            <BrainCircuit size={20} style={{ minWidth: 20 }} />
-            <span className={styles.navText}>Course Gen</span>
-          </a>
-          <a href="#" className={`${styles.navItem} ${activeTab === 'focus' ? styles.navItemActive : ''}`} onClick={(e) => { e.preventDefault(); setActiveTab('focus'); }}>
-            <Timer size={20} style={{ minWidth: 20 }} />
-            <span className={styles.navText}>Focus Room</span>
-          </a>
-          <a href="#" className={`${styles.navItem} ${activeTab === 'guider' ? styles.navItemActive : ''}`} onClick={(e) => { e.preventDefault(); setActiveTab('guider'); }}>
-            <MessageSquare size={20} style={{ minWidth: 20 }} />
-            <span className={styles.navText}>AI Guider</span>
-          </a>
-        </nav>
-        
-        <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-          <button className={styles.navItem} onClick={toggleTheme} style={{ width: '100%', textAlign: 'left', background: 'transparent', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
-            {isLightMode ? <Moon size={20} style={{ minWidth: 20 }} /> : <Sun size={20} style={{ minWidth: 20 }} />}
-            <span className={styles.navText}>{isLightMode ? 'Dark Mode' : 'Light Mode'}</span>
-          </button>
-          <a href="#" className={styles.navItem}>
-            <Settings size={20} style={{ minWidth: 20 }} />
-            <span className={styles.navText}>Settings</span>
-          </a>
-        </div>
-      </aside>
+        <button
+          onClick={() => setIsLightMode(!isLightMode)}
+          className="flex h-11 w-11 items-center justify-center rounded-full glass-panel text-foreground transition-all hover:scale-105 hover:border-primary cursor-pointer shadow-sm z-50"
+        >
+          {isLightMode ? <Moon size={20} /> : <Sun size={20} />}
+        </button>
+      </header>
 
-      {/* Main Content Area */}
-      <main className={styles.main}>
-        {/* Top Header */}
-        <header className={styles.header}>
-          <div className={styles.greeting}>
-            <h1>Good evening, Alex</h1>
-            <p>
-              {activeTab === 'dashboard' && "Ready to continue your journey in Quantum Computing?"}
-              {activeTab === 'course' && "Let's structure your infinite knowledge."}
-              {activeTab === 'focus' && "Eliminate distractions. Enter the flow state."}
-              {activeTab === 'guider' && "Your personal coach is ready to assist."}
-            </p>
+      <div className="relative z-10 max-w-7xl mx-auto px-6 pt-32 pb-20">
+        {/* Hero Section */}
+        <motion.section 
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8 }}
+          className="text-center py-20 min-h-[70vh] flex flex-col justify-center items-center relative"
+        >
+          {/* Decorative Floating Badges */}
+          <motion.div 
+            initial={{ opacity: 0, x: -50, y: 50 }}
+            animate={{ opacity: 1, x: 0, y: 0 }}
+            transition={{ duration: 1, delay: 0.2 }}
+            className="absolute left-[5%] top-[20%] hidden lg:flex flex-col gap-2 p-4 glass-panel rounded-2xl border-l-4 border-l-primary shadow-lg animate-float"
+          >
+            <div className="flex items-center gap-2">
+              <BrainCircuit className="text-primary w-5 h-5" />
+              <span className="font-bold text-foreground text-sm">Gemma 4 MoE</span>
+            </div>
+            <span className="text-xs text-muted-foreground text-left">Active Tutor Guider</span>
+          </motion.div>
+
+          <motion.div 
+            initial={{ opacity: 0, x: 50, y: -50 }}
+            animate={{ opacity: 1, x: 0, y: 0 }}
+            transition={{ duration: 1, delay: 0.4 }}
+            className="absolute right-[5%] bottom-[30%] hidden lg:flex flex-col gap-2 p-4 glass-panel rounded-2xl border-l-4 border-l-accent-tertiary shadow-lg animate-float"
+            style={{ animationDelay: '1.5s' }}
+          >
+            <div className="flex items-center gap-2">
+              <Focus className="text-accent-tertiary w-5 h-5" />
+              <span className="font-bold text-foreground text-sm">Deep Focus</span>
+            </div>
+            <span className="text-xs text-muted-foreground text-left">Zero-Latency WebGPU</span>
+          </motion.div>
+
+          <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full glass-panel text-sm text-primary font-bold mb-8 border-primary/30 shadow-md hover:scale-105 transition-transform cursor-default">
+            <Zap className="w-4 h-4 text-amber-500" />
+            <span className="bg-gradient-to-r from-primary to-accent-secondary bg-clip-text text-transparent">AI-Powered Learning Workspace</span>
+          </div>
+          <h1 className="text-6xl md:text-[7rem] font-extrabold mb-8 tracking-tighter text-foreground drop-shadow-lg font-heading leading-none">
+            Meet <span className="gradient-text relative inline-block">OmniLearn
+              <div className="absolute -inset-1 bg-gradient-to-r from-primary to-accent-tertiary blur-2xl opacity-20 -z-10 rounded-full"></div>
+            </span>
+          </h1>
+          <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto font-medium leading-relaxed mb-14 drop-shadow-sm">
+            An all-in-one personalized environment for autonomous learners. Merging curriculum planning, an active agentic tutor, and a privacy-first focus room to preserve your flow state.
+          </p>
+          <div className="flex flex-col sm:flex-row justify-center gap-6 z-10">
+            <div className="relative group">
+              <div className="absolute -inset-0.5 bg-gradient-to-r from-primary via-accent-secondary to-accent-tertiary rounded-full blur opacity-70 group-hover:opacity-100 transition duration-1000 group-hover:duration-200 animate-pulse"></div>
+              <Button 
+                size="lg"
+                className="relative px-12 py-8 rounded-full font-bold text-xl shadow-[var(--shadow-premium)] hover:-translate-y-1 transition-all duration-300 w-full"
+                onClick={() => setShowLogin(true)}
+              >
+                Start Learning
+                <Lock className="ml-2 w-5 h-5 opacity-70" />
+              </Button>
+            </div>
+            <Button 
+              size="lg"
+              variant="outline"
+              className="px-12 py-8 rounded-full font-bold text-xl glass-panel hover:bg-white/10 dark:hover:bg-white/5 transition-all duration-300 border-border hover:-translate-y-1 w-full"
+              onClick={scrollToArchitecture}
+            >
+              View Architecture
+            </Button>
+          </div>
+        </motion.section>
+
+        {/* Core Features */}
+        <section className="py-32 border-t border-border/50">
+          <div className="text-center mb-20">
+            <h2 className="text-4xl md:text-5xl font-extrabold mb-6 text-foreground font-heading tracking-tight">Core Modules</h2>
+            <p className="text-xl text-muted-foreground max-w-2xl mx-auto font-medium">Everything you need to deeply master a topic in one unified workspace.</p>
           </div>
           
-          <div className={styles.profile} onClick={() => setIsAuthenticated(false)}>
-            <div className={styles.avatar}></div>
-            <span className={styles.profileName}>Alex M.</span>
+          <div className="grid md:grid-cols-3 gap-8">
+            <FeatureCard 
+              index={0}
+              icon={BookOpen}
+              title="Course Generator & Curriculum Planner"
+              description="Transforms raw user goals or dense reference materials into structured pathways. Ingest massive textbooks and let the system map out chunked, logical, multi-week learning nodes."
+            />
+            <FeatureCard 
+              index={1}
+              icon={BrainCircuit}
+              title="The Intelligent AI Guider"
+              description="An active, always-on mentor attached to your current learning node. It utilizes retrieval-grounded Q&A and native function calling to trigger flashcards, pop-quizzes, and scrape supplementary external knowledge."
+            />
+            <FeatureCard 
+              index={2}
+              icon={Focus}
+              title="The Focus Room & Study Space"
+              description="A minimalist, distraction-free environment. Features native Pomodoro timers and a local offline companion running purely in-browser via WebGPU, ensuring absolute data privacy."
+            />
           </div>
-        </header>
+        </section>
 
-        {/* Dynamic Views */}
-        {activeTab === 'dashboard' && <DashboardView setActiveTab={setActiveTab} />}
-        {activeTab === 'course' && <CourseGenView />}
-        {activeTab === 'focus' && <FocusRoomView />}
-        {activeTab === 'guider' && <GuiderView />}
-
-      </main>
-    </div>
-  );
-}
-
-function DashboardView({ setActiveTab }: { setActiveTab: (tab: string) => void }) {
-  return (
-    <div className={styles.grid}>
-      {/* Left Column */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '2.5rem' }}>
-        
-        {/* Active Focus Session Hero */}
-        <div className={styles.heroCard}>
-          <div className={styles.heroGlow}></div>
-          <div className={styles.heroContent}>
-            <span className={styles.heroTag}>Currently Focusing</span>
-            <h2 className={styles.heroTitle}>Quantum Superposition</h2>
-            <p className={styles.heroDesc}>
-              You're 45 minutes into your deep dive. You've mastered Qubits, now it's time to understand how particles exist in multiple states.
-            </p>
-            <div className={styles.heroActions}>
-              <button className={styles.btnPrimary} onClick={() => setActiveTab('focus')}>
-                <Play size={18} fill="currentColor" /> Resume Session
-              </button>
-              <button className={styles.btnSecondary} onClick={() => setActiveTab('course')}>
-                <BookOpen size={18} /> View Roadmap
-              </button>
+        {/* Architecture Details */}
+        <section id="architecture" className="py-32 relative border-t border-border/50">
+          <div className="glass-panel rounded-3xl p-8 md:p-16 shadow-[0_20px_50px_-20px_rgba(0,0,0,0.1)]">
+            <div className="text-center mb-16">
+              <h2 className="text-4xl md:text-5xl font-extrabold mb-6 text-foreground font-heading tracking-tight">Intelligent AI Architecture</h2>
+              <p className="text-xl text-muted-foreground max-w-2xl mx-auto font-medium">
+                Cleanly splitting the workload among specialized models to maximize efficiency and minimize infrastructure overhead.
+              </p>
             </div>
-          </div>
-        </div>
-
-        {/* Tool Integration Grid */}
-        <div>
-          <h3 style={{ fontSize: '1.25rem', marginBottom: '1.25rem' }}>Your Toolkit</h3>
-          <div className={styles.toolsGrid}>
-            <div className={styles.toolCard} onClick={() => setActiveTab('course')}>
-              <div className={styles.toolIcon}>
-                <BrainCircuit size={24} />
-              </div>
-              <h4 className={styles.toolTitle}>Course Generator</h4>
-              <p className={styles.toolDesc}>Turn any PDF or YouTube video into a structured study path instantly.</p>
-            </div>
-            
-            <div className={styles.toolCard} onClick={() => setActiveTab('focus')}>
-              <div className={styles.toolIcon}>
-                <Timer size={24} />
-              </div>
-              <h4 className={styles.toolTitle}>Focus Room</h4>
-              <p className={styles.toolDesc}>Immersive Pomodoro environment with ambient noise and site blockers.</p>
-            </div>
-            
-            <div className={styles.toolCard} onClick={() => setActiveTab('guider')}>
-              <div className={styles.toolIcon}>
-                <Search size={24} />
-              </div>
-              <h4 className={styles.toolTitle}>Deep Search</h4>
-              <p className={styles.toolDesc}>Search across all your generated materials, notes, and transcripts.</p>
+            <div className="grid md:grid-cols-3 gap-8">
+              <ModelCard 
+                model="Gemma 31B Dense"
+                purpose="Syllabus Mapping & Ingestion"
+                strategy="Leverages the massive 256K context window to ingest large textbooks and produce structured, hallucination-free weekly curricula."
+              />
+              <ModelCard 
+                model="Gemma 26B MoE"
+                purpose="The AI Guider (Tutor)"
+                strategy="Utilizes high-speed token generation for real-time, fluid conversations and rapid native function calling."
+              />
+              <ModelCard 
+                model="Gemini / WebGPU"
+                purpose="Focus Room Companion"
+                strategy="Runs specialized operations locally or via edge networks. Processes user inputs with minimal latency and maximum privacy."
+              />
             </div>
           </div>
-        </div>
-        
+        </section>
+
+        {/* Wow Factor */}
+        <section className="py-32 text-center max-w-5xl mx-auto border-t border-border/50">
+          <h2 className="text-4xl md:text-5xl font-extrabold mb-16 text-foreground font-heading tracking-tight">The "Wow" Factor</h2>
+          <div className="grid md:grid-cols-2 gap-10 text-left">
+            <motion.div 
+              initial={{ opacity: 0, x: -30 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              className="glass-panel p-10 rounded-2xl border-l-4 border-l-accent-tertiary shadow-sm hover:shadow-lg transition-all duration-300"
+            >
+              <h3 className="text-2xl font-bold mb-4 flex items-center gap-3 text-foreground font-heading">
+                <Network className="text-accent-tertiary w-7 h-7" />
+                True Hybrid Architecture
+              </h3>
+              <p className="text-muted-foreground leading-relaxed font-medium">
+                Seamlessly balances serverless cloud computation for massive 256K context mapping with low-latency edge deployment for real-time interactive companion elements.
+              </p>
+            </motion.div>
+            <motion.div 
+              initial={{ opacity: 0, x: 30 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              className="glass-panel p-10 rounded-2xl border-l-4 border-l-amber-500 shadow-sm hover:shadow-lg transition-all duration-300"
+            >
+              <h3 className="text-2xl font-bold mb-4 flex items-center gap-3 text-foreground font-heading">
+                <Clock className="text-amber-500 w-7 h-7" />
+                Contextual Continuity
+              </h3>
+              <p className="text-muted-foreground leading-relaxed font-medium">
+                The AI Tutor possesses long-term contextual memory of the student's exact learning progress, completely eliminating the need to re-prompt or manually switch apps.
+              </p>
+            </motion.div>
+          </div>
+        </section>
       </div>
 
-      {/* Right Column: AI Guider Panel */}
-      <div className={styles.sidePanel}>
-        <div className={styles.widget} style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-          <div className={styles.widgetHeader}>
-            <h3 className={styles.widgetTitle}>
-              <Zap size={20} className={styles.widgetTitleIcon} />
-              Gemma Coach
-            </h3>
-          </div>
-          
-          <div className={styles.aiChat} style={{ flex: 1 }}>
-            <div className={styles.aiMessage}>
-              I noticed you struggled with the concept of entanglement yesterday. Would you like me to find a simpler visual explanation before we move to Superposition?
+      {/* Auth Dialog */}
+      <Dialog open={showLogin} onOpenChange={setShowLogin}>
+        <DialogContent className="sm:max-w-[420px] bg-card border-border rounded-3xl p-8 shadow-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-center font-heading text-3xl font-bold mb-2">
+              {isSignUp ? 'Create Account' : 'Welcome Back'}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="flex flex-col gap-5 mt-2">
+            <div className="flex flex-col gap-2">
+              <label className="text-sm font-semibold text-muted-foreground ml-1">Email Address</label>
+              <Input
+                type="email"
+                placeholder="alex@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleAuth()}
+                className="rounded-xl h-12"
+              />
             </div>
-          </div>
-          
-          <div className={styles.aiInput}>
-            <input 
-              type="text" 
-              className={styles.inputField} 
-              placeholder="Ask a question or request a resource..." 
-            />
-            <button className={styles.sendBtn}>
-              <Send size={18} />
+            <div className="flex flex-col gap-2">
+              <label className="text-sm font-semibold text-muted-foreground ml-1">Password</label>
+              <Input
+                type="password"
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleAuth()}
+                className="rounded-xl h-12"
+              />
+            </div>
+            <div className="flex gap-3 mt-4">
+              <Button
+                onClick={handleAuth}
+                disabled={authLoading}
+                className="flex-1 rounded-xl py-6 text-lg font-bold shadow-md hover:shadow-lg transition-all"
+              >
+                {authLoading ? 'Please wait...' : (isSignUp ? 'Sign Up' : 'Login')}
+              </Button>
+            </div>
+            <button
+              onClick={() => setIsSignUp(!isSignUp)}
+              className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors text-center mt-2"
+            >
+              {isSignUp ? 'Already have an account? Login' : "Don't have an account? Sign Up"}
             </button>
           </div>
-        </div>
-
-        {/* Quick Progress Widget */}
-        <div className={styles.widget}>
-          <h3 className={styles.widgetTitle} style={{ fontSize: '1rem', marginBottom: '0.5rem' }}>Weekly Goal</h3>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>12 hrs / 18 hrs focused</p>
-          
-          <div className={styles.progressSection}>
-            <div className={styles.progressBar}>
-              <div className={styles.progressFill}></div>
-            </div>
-            <div className={styles.progressStats}>
-              <span>66%</span>
-              <span>6 hrs left</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function CourseGenView() {
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem', animation: 'fadeIn 0.5s ease-out', maxWidth: '800px', margin: '0 auto', width: '100%' }}>
-      <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-        <h2 style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>Generate Your Next Module</h2>
-        <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem' }}>Paste a YouTube link, Wikipedia article, or upload a PDF to instantly create a structured roadmap.</p>
-      </div>
-
-      <div className={styles.widget} style={{ padding: '3rem', display: 'flex', flexDirection: 'column', alignItems: 'center', borderStyle: 'dashed', borderWidth: '2px', borderColor: 'var(--accent-primary)', background: 'rgba(99, 102, 241, 0.02)' }}>
-        <UploadCloud size={48} color="var(--accent-primary)" style={{ marginBottom: '1.5rem' }} />
-        <h3 style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>Drag & Drop Materials</h3>
-        <p style={{ color: 'var(--text-tertiary)', marginBottom: '2rem' }}>Supports .pdf, .docx, .txt, or direct URLs</p>
-        
-        <div style={{ display: 'flex', width: '100%', maxWidth: '500px', gap: '0.5rem' }}>
-          <input type="text" className={styles.inputField} placeholder="https://youtube.com/watch?v=..." style={{ flex: 1 }} />
-          <button className={styles.btnPrimary} style={{ padding: '0.75rem 1.5rem' }}>Generate</button>
-        </div>
-      </div>
-
-      <div>
-        <h3 style={{ fontSize: '1.25rem', marginBottom: '1rem' }}>Recent Generations</h3>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          {[
-            { title: 'Quantum Computing for Beginners', source: 'YouTube (3hr playlist)', progress: '45%' },
-            { title: 'Advanced Data Structures', source: 'MIT OpenCourseWare PDF', progress: '100%' }
-          ].map((item, i) => (
-            <div key={i} className={styles.widget} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1.5rem' }}>
-              <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                <div style={{ width: '40px', height: '40px', borderRadius: '8px', background: 'var(--glass-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <BrainCircuit size={20} color="var(--accent-secondary)" />
-                </div>
-                <div>
-                  <h4 style={{ fontWeight: 600 }}>{item.title}</h4>
-                  <span style={{ fontSize: '0.85rem', color: 'var(--text-tertiary)' }}>{item.source}</span>
-                </div>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
-                <span style={{ fontWeight: 600, color: 'var(--accent-primary)' }}>{item.progress}</span>
-                <button className={styles.btnSecondary} style={{ padding: '0.5rem 1rem', fontSize: '0.9rem' }}>Continue</button>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function FocusRoomView() {
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, animation: 'fadeIn 0.5s ease-out' }}>
-      
-      <div style={{ background: 'radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, rgba(0,0,0,0) 70%)', padding: '5rem', borderRadius: '50%', display: 'flex', flexDirection: 'column', alignItems: 'center', position: 'relative' }}>
-        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, border: '1px solid rgba(99, 102, 241, 0.3)', borderRadius: '50%', animation: 'pulseGlow 4s infinite' }}></div>
-        
-        <span style={{ color: 'var(--text-secondary)', fontSize: '1.2rem', textTransform: 'uppercase', letterSpacing: '2px', marginBottom: '1rem' }}>Deep Work</span>
-        <h1 style={{ fontSize: '8rem', fontWeight: 300, lineHeight: 1, fontFamily: 'var(--font-heading)', color: 'var(--text-primary)', marginBottom: '2rem' }}>25:00</h1>
-        
-        <div style={{ display: 'flex', gap: '1.5rem' }}>
-          <button className={styles.btnSecondary} style={{ width: '64px', height: '64px', borderRadius: '50%', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <Coffee size={24} />
-          </button>
-          <button className={styles.btnPrimary} style={{ width: '80px', height: '80px', borderRadius: '50%', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 30px rgba(99, 102, 241, 0.6)' }}>
-            <Play size={32} fill="currentColor" style={{ marginLeft: '6px' }} />
-          </button>
-          <button className={styles.btnSecondary} style={{ width: '64px', height: '64px', borderRadius: '50%', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <Headphones size={24} />
-          </button>
-        </div>
-      </div>
-
-      <div className={styles.widget} style={{ marginTop: '4rem', width: '100%', maxWidth: '600px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div>
-          <h4 style={{ fontWeight: 600, marginBottom: '0.25rem' }}>Ambient Sound</h4>
-          <p style={{ fontSize: '0.875rem', color: 'var(--text-tertiary)' }}>Binaural Beats - Gamma Waves</p>
-        </div>
-        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-          <Volume2 size={20} color="var(--text-secondary)" />
-          <div style={{ width: '100px', height: '6px', background: 'var(--bg-tertiary)', borderRadius: '3px', overflow: 'hidden' }}>
-            <div style={{ width: '70%', height: '100%', background: 'var(--accent-primary)' }}></div>
-          </div>
-        </div>
-      </div>
-
-    </div>
-  );
-}
-
-function GuiderView() {
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', animation: 'fadeIn 0.5s ease-out' }}>
-      <div className={styles.widget} style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '2rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '2rem', paddingBottom: '1.5rem', borderBottom: '1px solid var(--border-color)' }}>
-          <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'linear-gradient(135deg, var(--accent-secondary), var(--accent-primary))', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <Zap size={24} color="white" />
-          </div>
-          <div>
-            <h2 style={{ fontSize: '1.5rem', fontWeight: 600 }}>Gemma Coach</h2>
-            <p style={{ color: 'var(--text-secondary)' }}>Your personal AI tutor with long-term memory.</p>
-          </div>
-        </div>
-
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '1.5rem', overflowY: 'auto', paddingRight: '1rem' }}>
-          <div style={{ alignSelf: 'flex-start', maxWidth: '80%' }}>
-            <div className={styles.aiMessage} style={{ fontSize: '1rem', padding: '1.25rem' }}>
-              Welcome back, Alex. I noticed we left off at Quantum Superposition. Are you ready to dive into the math, or would you prefer a conceptual overview first?
-            </div>
-            <span style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)', marginLeft: '0.5rem', marginTop: '0.5rem', display: 'block' }}>10:42 AM</span>
-          </div>
-
-          <div style={{ alignSelf: 'flex-end', maxWidth: '80%' }}>
-            <div style={{ background: 'var(--accent-primary)', color: 'white', padding: '1.25rem', borderRadius: '12px', borderTopRightRadius: '4px', fontSize: '1rem', lineHeight: 1.6 }}>
-              Let's do a conceptual overview first, I'm a bit tired today.
-            </div>
-            <span style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)', marginRight: '0.5rem', marginTop: '0.5rem', display: 'block', textAlign: 'right' }}>10:45 AM</span>
-          </div>
-        </div>
-
-        <div style={{ display: 'flex', gap: '1rem', marginTop: '2rem', background: 'var(--bg-tertiary)', padding: '0.5rem', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
-          <input 
-            type="text" 
-            style={{ flex: 1, background: 'transparent', border: 'none', padding: '1rem', color: 'var(--text-primary)', outline: 'none', fontSize: '1rem' }} 
-            placeholder="Type your response..." 
-          />
-          <button className={styles.btnPrimary} style={{ padding: '0 1.5rem' }}>
-            <Send size={20} />
-          </button>
-        </div>
-      </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

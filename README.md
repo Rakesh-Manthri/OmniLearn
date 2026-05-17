@@ -1,50 +1,102 @@
-# Gemma Study Sphere
+# OmniLearn — Unified AI Learning Workspace
 
-**Gemma Study Sphere** is a high-fidelity, premium online learning dashboard designed to eliminate cognitive friction and the "paradox of choice" for modern students. It unifies scattered workflows—AI idea generation, focus timers, study roadmaps, and resources—into one cohesive, flow-state-inducing workspace.
+**OmniLearn** is an immersive, high-fidelity online learning dashboard designed to eliminate cognitive friction, tool fragmentation, and the "paradox of choice" for modern autonomous students. It merges a curriculum planner, an active agentic tutor, and a local privacy-first focus room into a single context-aware environment that preserves the user's flow state.
 
-### 1. Premium Design Architecture
-- **Bespoke Design System**: Replaced default setups with a custom Vanilla CSS (CSS Modules) architecture ensuring pixel-perfect control and premium aesthetics.
-- **Dynamic Theming**: Implemented a seamless Light/Dark mode toggle that instantly overrides CSS variables across the entire application without page reloads.
-- **"Free" & Spacious UI**: Replaced rigid borders with soft drop shadows, utilized glassmorphism (`backdrop-filter`), and increased padding to create an airy, uncluttered environment that reduces cognitive load.
-- **Fluid Animations**: Added `@keyframes` for floating background blobs, bouncy scroll indicators, and smooth modal scaling to make the interface feel alive.
+This project is built for the **Gemma 4 Impact Challenge** under the *"Future of Education"* track.
 
-### 2. Immersive Entry Experience
-- **Cinematic Landing Page**: A striking hero section with gradient typography centered perfectly on the screen.
-- **Smooth Discovery**: A scroll-revealed description section explaining the "Paradox of Choice" in modern learning.
-- **Glassmorphic Login**: Instead of jumping to a new page, clicking "Login" summons a frosted-glass modal overlay for credential input, leading to a seamless transition into the workspace.
+---
 
-### 3. Unified Workspace Modules
-We built a state-driven navigation architecture (`page.tsx`) that acts as a lightning-fast SPA, containing four distinct modules:
+## 🏗️ Folder Architecture
 
-*   **Dashboard View**: The central hub featuring an active "hero" focus session, quick toolkit shortcuts, weekly progress tracking, and a persistently docked AI Guider widget.
-*   **Course Generator View**: A drag-and-drop and URL-input interface allowing users to upload PDFs or paste YouTube links to instantly generate structured study roadmaps.
-*   **Focus Room View**: A deeply immersive, minimalist Pomodoro timer (25:00) featuring integrated ambient noise controls (e.g., Binaural Beats / Gamma Waves) to maintain flow state.
-*   **AI Guider View**: A dedicated, full-screen chat interface for "Gemma Coach," designed to maintain long-term contextual memory of the student's struggles and progress.
+To avoid port, package, and environment conflicts, the repository is split into clean backend and frontend workspaces:
 
-### 4. UX Enhancements
-- **Collapsible Sidebar**: Added a toggle button to shrink the sidebar down to just its icons, reclaiming massive horizontal screen real estate for deep work.
-- **Environment & Build Stability**: Bypassed local NVM/Node pathing issues, removed broken native PostCSS dependencies, and resolved strict TypeScript type errors regarding Lucide React icons.
+```
+OmniLearn/
+├── frontend/               # Next.js 15 + React 19 Frontend Web App
+│   ├── app/                # Next.js App Router (Dashboard, Focus Room, AI Guider)
+│   ├── components/         # Modular React Components (Common, Course, Focus, Guider)
+│   ├── context/            # Global Context Stores (AppState, Timer)
+│   ├── hooks/              # Custom Hooks (useTimer, useGemmaLocal via WebGPU)
+│   ├── next.config.js      # Next.js configurations
+│   └── package.json        # Frontend Dependencies
+│
+├── app/                    # FastAPI Async Python Backend (from origin/backend branch)
+│   ├── routes/             # API Endpoints (course.py, tutor.py, session.py)
+│   ├── services/           # LLM Orchestrator services (gemma.py via google-genai SDK)
+│   └── main.py             # FastAPI Server Entrypoint
+│
+├── .venv/                  # Python Virtual Environment (ignored)
+├── requirements.txt        # Backend dependencies
+└── README.md               # You are here
+```
 
-## 🛠️ Tech Stack
+---
 
-- **Framework**: Next.js 16 (App Router)
+## 🛠️ Technology Stack
+
+### Frontend
+- **Framework**: Next.js 15 (App Router)
 - **Library**: React 19
 - **Language**: TypeScript
 - **Styling**: Vanilla CSS with CSS Modules and CSS Custom Variables
 - **Icons**: `lucide-react`
 
-## 🏃‍♂️ How to Run Locally
-
-1. Ensure you have Node.js 22+ installed.
-2. Clone the repository and install dependencies:
-   ```bash
-   npm install
-   ```
-3. Run the development server:
-   ```bash
-   npm run dev
-   ```
-4. Open [http://localhost:3000](http://localhost:3000) in your browser.
+### Backend
+- **Framework**: FastAPI (Python 3.12+)
+- **Server**: Uvicorn (Asynchronous ASGI server)
+- **AI Orchestration**: Google GenAI SDK (`google-genai` for model integration)
+- **LLM Engine**: Gemma Models (specifically calibrated with custom prompts for Socratic coaching and JSON schema generation)
 
 ---
-*Designed with an obsessive focus on reducing friction and maximizing the student flow state.*
+
+## 🏃‍♂️ How to Run Locally
+
+### 1. Running the Next.js Frontend
+To launch the interactive, glassmorphic UI workspace:
+
+```powershell
+# Navigate into the frontend workspace
+cd frontend
+
+# Install UI dependencies
+npm install
+
+# Start the Next.js development server
+npm run dev
+```
+👉 Open **[http://localhost:3000](http://localhost:3000)** in your browser.
+
+---
+
+### 2. Running the FastAPI Backend
+To launch the AI orchestration server (when working on the backend branch):
+
+```powershell
+# Ensure you are at the workspace root
+cd c:\Projects\OmniLearn
+
+# Create a virtual environment (if not already done)
+python -m venv .venv
+
+# Activate the virtual environment
+# On PowerShell:
+.venv\Scripts\Activate.ps1
+# On CMD:
+.venv\Scripts\activate.bat
+
+# Install backend dependencies
+pip install -r requirements.txt
+
+# Run the backend server with hot-reloading
+uvicorn app.main:app --reload
+```
+👉 The API documentation will be available at **[http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)**.
+
+---
+
+## 🌟 Immersive Core Workspace Modules
+
+*   **Dashboard View**: The central hub featuring the active focus topic, quick toolkit navigation shortcuts, weekly progress indicators, and an interactive "Gemma Coach" sidebar widget.
+*   **Course Generator**: An active ingestion workspace where students upload materials (textbooks, PDFs, transcripts) or paste YouTube links to produce structure-validated, multi-week study roadmaps.
+*   **Focus Timer**: A deeply immersive Pomodoro room containing Gamma-Wave / Binaural Beats volume mixers, ambient sounds, and a local edge-powered companion.
+*   **AI Guider View**: A full-screen conversational canvas with "Gemma Coach," calibrated dynamically as an elite Socratic tutor that uses targeted questions rather than direct answers to guide student discovery.

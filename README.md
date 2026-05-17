@@ -100,3 +100,66 @@ uvicorn app.main:app --reload
 *   **Course Generator**: An active ingestion workspace where students upload materials (textbooks, PDFs, transcripts) or paste YouTube links to produce structure-validated, multi-week study roadmaps.
 *   **Focus Timer**: A deeply immersive Pomodoro room containing Gamma-Wave / Binaural Beats volume mixers, ambient sounds, and a local edge-powered companion.
 *   **AI Guider View**: A full-screen conversational canvas with "Gemma Coach," calibrated dynamically as an elite Socratic tutor that uses targeted questions rather than direct answers to guide student discovery.
+
+---
+
+## 🔌 Backend API Specification
+
+For detailed reference, the FastAPI backend exposes the following API routes:
+
+### 🗺️ Course Planner
+*   **Endpoint:** `POST /api/courses/generate`
+*   **Purpose:** Generate a structured, schema-validated learning syllabus.
+*   **Request Schema:**
+    ```json
+    {
+      "topic": "Python Programming",
+      "duration_weeks": 4,
+      "difficulty": "Beginner"
+    }
+    ```
+    *Note: `difficulty` must be one of: `Beginner`, `Intermediate`, `Advanced`.*
+
+---
+
+### 🎓 Socratic Tutor
+*   **Endpoint:** `POST /api/tutor/chat`
+*   **Purpose:** Converse with the empathetic, inquiry-driven AI mentor.
+*   **Request Schema:**
+    ```json
+    {
+      "course_context": "Python Programming for Beginners",
+      "current_topic": "Lists and Loops",
+      "message": "What is a for loop?",
+      "history": [
+        { "role": "user", "text": "Hello" },
+        { "role": "model", "text": "Hi! What would you like to learn today?" }
+      ]
+    }
+    ```
+
+---
+
+### ⏱️ Study Sessions (Focus Tracking)
+*   **Endpoint:** `POST /api/sessions/start` | Start a timer focus block.
+    *   **Request:**
+        ```json
+        {
+          "user_id": "student_01",
+          "topic": "Lists and Loops",
+          "course_name": "Python Programming",
+          "planned_minutes": 25
+        }
+        ```
+*   **Endpoint:** `POST /api/sessions/end` | Log study stats upon timer completion.
+    *   **Request:**
+        ```json
+        {
+          "user_id": "student_01",
+          "session_id": "uuid-from-start-response",
+          "actual_minutes": 23,
+          "notes": "Covered for loops and list comprehensions"
+        }
+        ```
+*   **Endpoint:** `GET /api/sessions/history/{user_id}` | Chronological list of past study sessions.
+*   **Endpoint:** `GET /api/sessions/stats/{user_id}` | Cumulative studying stats.

@@ -118,8 +118,9 @@ JSON Shape:
 }}
 """
 
-        response = await client.aio.models.generate_content(
-            model=settings.GEMINI_MODEL,
+        from app.services.gemma import GemmaService
+        response = await GemmaService._generate_with_fallback(
+            client=client,
             contents=prompt,
             config=types.GenerateContentConfig(
                 response_mime_type="application/json",
@@ -304,8 +305,9 @@ JSON Format:
 ]
 """
 
-        response = await client.aio.models.generate_content(
-            model=settings.GEMINI_MODEL,
+        from app.services.gemma import GemmaService
+        response = await GemmaService._generate_with_fallback(
+            client=client,
             contents=prompt,
             config=types.GenerateContentConfig(
                 response_mime_type="application/json",

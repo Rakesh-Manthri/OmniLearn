@@ -7,6 +7,7 @@ from pydantic import BaseModel
 
 from app.config import settings
 from app.services.rag import RAGService
+from app.services.gemma import GemmaService
 
 router = APIRouter(prefix="/api/tutor", tags=["Tutor"])
 
@@ -25,6 +26,7 @@ class TutorChatRequest(BaseModel):
     history: Optional[List[ChatMessage]] = None
     user_id: Optional[str] = None
     course_id: Optional[str] = None
+    primary_model: Optional[str] = "gemma-32b"
 
 
 class EmbedRequest(BaseModel):
@@ -142,14 +144,15 @@ BEHAVIOR RULES:
         )
 
         # Generate response using async aio client
-        response = await client.aio.models.generate_content(
-            model=settings.GEMINI_MODEL,
+        response = await GemmaService._generate_with_fallback(
+            client=client,
             contents=contents,
             config=types.GenerateContentConfig(
                 system_instruction=system_instruction,
                 temperature=0.7,
                 max_output_tokens=1024,
             ),
+            primary_model_choice=request.primary_model,
         )
 
         return TutorChatResponse(
@@ -181,12 +184,13 @@ async def upload_image(file: UploadFile = File(...)):
         )
         
         # Analyze using the default gemini model (multimodal support)
-        response = await client.aio.models.generate_content(
-            model=settings.GEMINI_MODEL,
+        response = await GemmaService._generate_with_fallback(
+            client=client,
             contents=[
                 types.Part.from_bytes(data=contents, mime_type=mime_type),
                 "Analyze this educational image, diagram, or homework problem. Extract all visible text, equations, and thoroughly explain what is depicted."
-            ]
+            ],
+            config=types.GenerateContentConfig()
         )
         
         return {"analysis": response.text}

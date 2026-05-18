@@ -4,14 +4,14 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { 
-  Sparkles, 
-  Sun, 
-  Moon, 
+import {
+  Sparkles,
+  Sun,
+  Moon,
   ArrowRight,
   ArrowDown,
-  BookOpen, 
-  BrainCircuit, 
+  BookOpen,
+  BrainCircuit,
   Focus,
   Loader2
 } from 'lucide-react';
@@ -22,7 +22,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 export default function LandingPage() {
   const { user, loading, signIn, signUp } = useAuth();
   const router = useRouter();
-  
+
   const [showLogin, setShowLogin] = useState(false);
   const [isLightMode, setIsLightMode] = useState(true);
   const [email, setEmail] = useState('');
@@ -72,7 +72,7 @@ export default function LandingPage() {
 
   return (
     <div className="relative min-h-screen bg-background text-foreground font-body transition-colors duration-500 overflow-x-hidden selection:bg-primary/30 antialiased selection:text-primary-foreground">
-      
+
       {/* ── Background Mesh Blobs ── */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
         <div className="absolute top-[-20%] left-1/2 -translate-x-1/2 w-[80vw] h-[80vw] rounded-full bg-gradient-to-b from-primary/10 via-purple-500/5 to-transparent blur-[160px] dark:from-primary/20 animate-pulse duration-1000" />
@@ -100,10 +100,10 @@ export default function LandingPage() {
 
       {/* ── Main Layout ── */}
       <main className="relative z-10 w-full flex flex-col items-center">
-        
+
         {/* ── Hero Section (Full Screen) ── */}
         <section className="w-full min-h-screen flex flex-col items-center justify-center text-center px-6 pt-20">
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, ease: "easeOut" }}
@@ -117,7 +117,7 @@ export default function LandingPage() {
               The AI-powered learning environment that adapts to you. No rigid boundaries. Just pure, free-flowing knowledge.
             </p>
 
-            <button 
+            <button
               onClick={() => setShowLogin(true)}
               className="group flex items-center gap-6 mt-16 text-muted-foreground hover:text-foreground transition-all duration-500 outline-none"
             >
@@ -129,7 +129,7 @@ export default function LandingPage() {
                 <ArrowRight className="w-5 h-5 -ml-1 text-muted-foreground/50 group-hover:text-primary group-hover:translate-x-2 transition-all duration-500 ease-out" />
               </div>
             </button>
-            
+
             <div className="mt-24 opacity-70 flex flex-col items-center gap-3">
               <span className="text-sm font-medium text-muted-foreground">Scroll down</span>
               <ArrowDown className="w-5 h-5 text-muted-foreground" />
@@ -139,8 +139,8 @@ export default function LandingPage() {
 
         {/* ── Features Description Section ── */}
         <section id="features" className="w-full max-w-7xl mx-auto px-6 py-32 flex flex-col gap-32">
-          
-          <motion.div 
+
+          <motion.div
             initial={{ opacity: 0, y: 50 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: "-100px" }}
@@ -161,7 +161,7 @@ export default function LandingPage() {
             </div>
           </motion.div>
 
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: 50 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: "-100px" }}
@@ -182,7 +182,7 @@ export default function LandingPage() {
             </div>
           </motion.div>
 
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: 50 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: "-100px" }}
@@ -232,7 +232,7 @@ export default function LandingPage() {
               {isSignUp ? 'Enter your email to get started.' : 'Enter your details to sign in.'}
             </p>
           </DialogHeader>
-          
+
           <div className="flex flex-col gap-5">
             <div className="space-y-2">
               <label className="text-sm font-medium text-foreground">Email</label>
@@ -245,7 +245,7 @@ export default function LandingPage() {
                 className="h-12 rounded-xl bg-secondary/30 border-border/50 px-4 focus-visible:ring-primary/50 text-base"
               />
             </div>
-            
+
             <div className="space-y-2">
               <label className="text-sm font-medium text-foreground">Password</label>
               <Input
@@ -266,7 +266,7 @@ export default function LandingPage() {
               {authLoading ? <Loader2 className="animate-spin mr-2" size={18} /> : null}
               {authLoading ? 'Authenticating...' : (isSignUp ? 'Sign Up' : 'Log In')}
             </Button>
-            
+
             <div className="text-center mt-2">
               <button
                 onClick={() => setIsSignUp(!isSignUp)}

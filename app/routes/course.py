@@ -24,16 +24,31 @@ router = APIRouter(prefix="/api/courses", tags=["Courses"])
 
 class CourseGenerationRequest(BaseModel):
     topic: str
-    duration_weeks: int = 4
+    duration_weeks: int = 4          # maps to semesters
     difficulty: str = "Beginner"
-    user_id: Optional[str] = None  # If provided, course is saved to Supabase
-
+    hours: int = 15                  # weekly hours commitment
+    goals: Optional[str] = ""
+    style: Optional[str] = "balanced"
+    industry: Optional[str] = ""
+    selected_topics: List[str] = []
+    notes: Optional[str] = ""
+    user_id: Optional[str] = None    # If provided, course is saved to Supabase
+    primary_model: Optional[str] = "gemma-32b"
 
 class FetchResourcesRequest(BaseModel):
     course_id: str
     module_title: str
     topics: List[str]
     course_name: str = ""
+    primary_model: Optional[str] = "gemma-32b"
+
+
+class SaveCourseRequest(BaseModel):
+    user_id: str
+    course_name: str
+    syllabus: dict
+    difficulty: str
+    duration_weeks: int
 
 
 class CourseResponse(BaseModel):
@@ -74,6 +89,13 @@ async def generate_course(request: CourseGenerationRequest):
             topic=request.topic,
             duration_weeks=request.duration_weeks,
             difficulty=request.difficulty,
+            hours=request.hours,
+            goals=request.goals,
+            style=request.style,
+            industry=request.industry,
+            selected_topics=request.selected_topics,
+            notes=request.notes,
+            primary_model=request.primary_model,
         )
     except ValueError as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -88,25 +110,25 @@ async def generate_course(request: CourseGenerationRequest):
         try:
             db = get_supabase_client()
 
-            # Insert course record
-            course_insert = db.table("courses").insert({
-                "user_id": request.user_id,
-                "title": course_data.course_name,
-                "syllabus": course_data.model_dump(),
-                "difficulty": course_data.difficulty_level,
-                "duration_weeks": request.duration_weeks,
+            # Insert course via SECURITY DEFINER RPC (bypasses RLS)
+            course_rpc = db.rpc("insert_course", {
+                "p_user_id": request.user_id,
+                "p_title": course_data.course_name,
+                "p_syllabus": course_data.model_dump(),
+                "p_difficulty": course_data.difficulty_level,
+                "p_duration_weeks": request.duration_weeks,
             }).execute()
 
-            course_id = course_insert.data[0]["id"]
+            course_id = course_rpc.data
 
             # Insert modules
             for module in course_data.modules:
-                db.table("modules").insert({
-                    "course_id": course_id,
-                    "week_number": module.week_number,
-                    "title": module.module_title,
-                    "topics": [t.model_dump() for t in module.topics],
-                    "objectives": module.objectives,
+                db.rpc("insert_module", {
+                    "p_course_id": course_id,
+                    "p_week_number": module.week_number,
+                    "p_title": module.module_title,
+                    "p_topics": [t.model_dump() for t in module.topics],
+                    "p_objectives": module.objectives,
                 }).execute()
 
             return {
@@ -124,6 +146,44 @@ async def generate_course(request: CourseGenerationRequest):
     return course_data.model_dump()
 
 
+@router.post("/save", status_code=status.HTTP_200_OK)
+async def save_course(request: SaveCourseRequest):
+    """Manually persist a generated course syllabus to Supabase."""
+    try:
+        db = get_supabase_client()
+
+        # Insert course via SECURITY DEFINER RPC (bypasses RLS)
+        course_rpc = db.rpc("insert_course", {
+            "p_user_id": request.user_id,
+            "p_title": request.course_name,
+            "p_syllabus": request.syllabus,
+            "p_difficulty": request.difficulty,
+            "p_duration_weeks": request.duration_weeks,
+        }).execute()
+
+        course_id = course_rpc.data
+        if not course_id:
+            raise HTTPException(status_code=500, detail="Failed to insert course record.")
+
+        # Insert modules
+        modules = request.syllabus.get("modules", [])
+        for module in modules:
+            db.rpc("insert_module", {
+                "p_course_id": course_id,
+                "p_week_number": module.get("week_number"),
+                "p_title": module.get("module_title"),
+                "p_topics": module.get("topics", []),
+                "p_objectives": module.get("objectives", []),
+            }).execute()
+
+        return {
+            "status": "success",
+            "course_id": course_id,
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to save course: {str(e)}")
+
+
 @router.post("/fetch-resources", status_code=status.HTTP_200_OK)
 async def fetch_resources(request: FetchResourcesRequest):
     """Use Gemma function calling to fetch live educational resources for a module."""
@@ -135,6 +195,7 @@ async def fetch_resources(request: FetchResourcesRequest):
             course_name=request.course_name,
             module_title=request.module_title,
             topics=request.topics,
+            primary_model=request.primary_model,
         )
 
         resource_dicts = [r.model_dump() for r in resources]
@@ -177,22 +238,32 @@ async def get_course(course_id: str):
     try:
         db = get_supabase_client()
 
-        course = db.table("courses").select("*").eq("id", course_id).single().execute()
-        if not course.data:
+        # Retrieve course and modules via RPC (bypasses RLS safely)
+        course_rpc = db.rpc("get_course_by_id", {"p_course_id": course_id}).execute()
+        if not course_rpc.data:
             raise HTTPException(status_code=404, detail="Course not found.")
 
-        modules = db.table("modules").select("*").eq(
-            "course_id", course_id
-        ).order("week_number").execute()
-
-        return {
-            **course.data,
-            "modules": modules.data or [],
-        }
+        return course_rpc.data
     except HTTPException:
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to retrieve course: {str(e)}")
+
+
+@router.delete("/{course_id}", status_code=status.HTTP_200_OK)
+async def delete_course(course_id: str):
+    """Delete a course and all its associated modules."""
+    try:
+        db = get_supabase_client()
+
+        # Delete via SECURITY DEFINER RPC (handles cascade + bypasses RLS)
+        db.rpc("delete_course_cascade", {"p_course_id": course_id}).execute()
+
+        return {"status": "deleted", "course_id": course_id}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to delete course: {str(e)}")
 
 
 @router.get("/user/{user_id}", status_code=status.HTTP_200_OK)
@@ -201,24 +272,18 @@ async def list_user_courses(user_id: str):
     try:
         db = get_supabase_client()
 
-        courses = db.table("courses").select(
-            "id, title, difficulty, duration_weeks, created_at"
-        ).eq("user_id", user_id).order("created_at", desc=True).execute()
+        # Query user courses and module counts via RPC (bypasses RLS safely)
+        courses_rpc = db.rpc("get_user_courses", {"p_user_id": user_id}).execute()
 
         result = []
-        for c in courses.data or []:
-            # Count modules for this course
-            modules = db.table("modules").select(
-                "id", count="exact"
-            ).eq("course_id", c["id"]).execute()
-
+        for c in courses_rpc.data or []:
             result.append({
                 "id": c["id"],
                 "course_name": c["title"],
                 "difficulty_level": c["difficulty"],
                 "created_at": c["created_at"],
                 "duration_weeks": c.get("duration_weeks", 4),
-                "module_count": modules.count or 0,
+                "module_count": c.get("module_count", 0),
             })
 
         return {"courses": result}

@@ -53,6 +53,25 @@ export const api = {
     return res.json();
   },
 
+  saveCourse: async (userId: string, courseName: string, syllabus: any, difficulty: string, durationWeeks: number) => {
+    const res = await fetch(`${BASE_URL}/api/courses/save`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        user_id: userId,
+        course_name: courseName,
+        syllabus,
+        difficulty,
+        duration_weeks: durationWeeks
+      })
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || 'Failed to save course syllabus');
+    }
+    return res.json() as Promise<{ status: string; course_id: string }>;
+  },
+
   fetchResources: async (course_id: string, module_title: string, topics: string[], course_name: string) => {
     const res = await fetch(`${BASE_URL}/api/courses/fetch-resources`, {
       method: 'POST',
@@ -73,6 +92,15 @@ export const api = {
     const res = await fetch(`${BASE_URL}/api/courses/user/${userId}`);
     if (!res.ok) throw new Error('Failed to list courses');
     return res.json() as Promise<{ courses: CourseListItem[] }>;
+  },
+
+  deleteCourse: async (courseId: string) => {
+    const res = await fetch(`${BASE_URL}/api/courses/${courseId}`, { method: 'DELETE' });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || 'Failed to delete course');
+    }
+    return res.json();
   },
 
   // ── Embeddings API via Gemini ─────────────────────────────────────────────

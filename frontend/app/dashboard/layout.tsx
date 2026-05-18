@@ -57,8 +57,10 @@ export default function DashboardLayout({
         onThemeToggle={() => setIsLightMode(!isLightMode)}
       />
       <main className="flex flex-1 flex-col gap-16 overflow-y-auto px-16 py-16 max-2xl:px-10 max-2xl:py-12">
-        <Header />
-        {children}
+        <div style={{ margin: '25px' }} className="flex flex-col gap-16">
+          <Header />
+          {children}
+        </div>
       </main>
     </div>
   );

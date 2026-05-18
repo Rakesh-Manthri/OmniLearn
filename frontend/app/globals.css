@@ -60,9 +60,9 @@
   --color-text-secondary: #475569;   /* Slate for secondary text */
   --color-text-tertiary: #94a3b8;    /* Muted slate for placeholders/tertiary */
 
-  --color-border: rgba(15, 23, 42, 0.06);
-  --color-glass-bg: rgba(255, 255, 255, 0.65);
-  --color-glass-border: rgba(255, 255, 255, 0.8);
+  --color-border: rgba(15, 23, 42, 0.08);
+  --color-glass-bg: rgba(255, 255, 255, 0.7);
+  --color-glass-border: rgba(15, 23, 42, 0.08);
 
   /* Core Shadcn Aliases */
   --color-background: #fafbfa;
@@ -84,7 +84,7 @@
   --color-ring: #2563eb;
   
   /* Additional shadow variables for light theme depth */
-  --shadow-premium: 0 10px 40px -10px rgba(0,0,0,0.06), 0 0 20px rgba(37, 99, 235, 0.05);
+  --shadow-premium: 0 25px 50px -12px rgba(15, 23, 42, 0.08), 0 0 50px -5px rgba(37, 99, 235, 0.04);
 }
 /* ── Global Resets ── */
 * {

@@ -16,7 +16,6 @@ import {
   ChevronRight,
   Mic,
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 
@@ -42,30 +41,30 @@ export function Sidebar({ collapsed, onToggle, isLightMode, onThemeToggle }: Sid
   return (
     <aside
       className={cn(
-        'relative flex flex-col gap-10 border-r border-border bg-card transition-all duration-400',
+        'relative flex flex-col gap-10 border-r border-border/60 bg-card/50 backdrop-blur-md transition-all duration-400 z-40',
         collapsed ? 'w-[90px] px-4 py-10' : 'w-[280px] px-6 py-10'
       )}
     >
       {/* Collapse toggle */}
       <button
         onClick={onToggle}
-        className="absolute top-10 -right-3.5 z-10 flex h-7 w-7 items-center justify-center rounded-full border border-border bg-secondary text-muted-foreground transition-all hover:bg-primary hover:text-white hover:border-primary"
+        className="absolute top-10 -right-4 z-50 flex h-8 w-8 items-center justify-center rounded-full border border-border/80 bg-background shadow-sm text-muted-foreground transition-all hover:bg-primary hover:text-white hover:scale-110"
       >
         {collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
       </button>
 
       {/* Logo */}
       <div className={cn('flex items-center gap-3 overflow-hidden whitespace-nowrap', collapsed && 'justify-center')}>
-        <div className="flex h-9 w-9 min-w-9 items-center justify-center rounded-[10px] bg-gradient-to-br from-primary to-accent-tertiary text-white font-bold">
-          <Sparkles size={18} />
+        <div className="flex h-10 w-10 min-w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary via-accent-secondary to-accent-tertiary text-white shadow-md">
+          <Sparkles size={20} />
         </div>
         {!collapsed && (
-          <span className="font-heading text-2xl font-bold">OmniLearn</span>
+          <span className="font-heading text-2xl font-extrabold tracking-tight">OmniLearn</span>
         )}
       </div>
 
       {/* Navigation */}
-      <nav className="flex flex-col gap-3">
+      <nav className="flex flex-col gap-2.5">
         {navItems.map((item) => {
           const isActive = pathname === item.href || (item.href !== '/dashboard' && pathname.startsWith(item.href));
           const NavButton = (
@@ -73,13 +72,14 @@ export function Sidebar({ collapsed, onToggle, isLightMode, onThemeToggle }: Sid
               key={item.href}
               onClick={() => router.push(item.href)}
               className={cn(
-                'flex items-center gap-4 rounded-[14px] px-4 py-3 font-medium text-muted-foreground transition-all overflow-hidden whitespace-nowrap',
-                collapsed && 'justify-center px-3',
-                isActive && 'bg-primary/8 text-primary',
-                !isActive && 'hover:bg-muted hover:text-foreground'
+                'flex items-center gap-4 rounded-xl px-4 py-3.5 font-bold transition-all duration-300 overflow-hidden whitespace-nowrap group',
+                collapsed && 'justify-center px-3 py-3.5',
+                isActive 
+                  ? 'glass-panel text-primary shadow-sm border border-primary/20 bg-primary/10' 
+                  : 'text-muted-foreground hover:bg-secondary/80 hover:text-foreground'
               )}
             >
-              <item.icon size={20} style={{ minWidth: 20 }} />
+              <item.icon size={22} style={{ minWidth: 22 }} className={cn("transition-transform duration-300", !isActive && "group-hover:scale-110")} />
               {!collapsed && <span>{item.label}</span>}
             </button>
           );
@@ -88,7 +88,7 @@ export function Sidebar({ collapsed, onToggle, isLightMode, onThemeToggle }: Sid
             return (
               <Tooltip key={item.href}>
                 <TooltipTrigger asChild>{NavButton}</TooltipTrigger>
-                <TooltipContent side="right">{item.label}</TooltipContent>
+                <TooltipContent side="right" className="font-bold">{item.label}</TooltipContent>
               </Tooltip>
             );
           }
@@ -97,24 +97,28 @@ export function Sidebar({ collapsed, onToggle, isLightMode, onThemeToggle }: Sid
       </nav>
 
       {/* Bottom actions */}
-      <div className="mt-auto flex flex-col gap-2">
+      <div className="mt-auto flex flex-col gap-2.5">
         <button
           onClick={onThemeToggle}
           className={cn(
-            'flex items-center gap-4 rounded-[14px] px-4 py-3 font-medium text-muted-foreground transition-all hover:bg-muted hover:text-foreground',
+            'flex items-center gap-4 rounded-xl px-4 py-3.5 font-bold text-muted-foreground transition-all duration-300 hover:bg-secondary/80 hover:text-foreground group',
             collapsed && 'justify-center px-3'
           )}
         >
-          {isLightMode ? <Moon size={20} style={{ minWidth: 20 }} /> : <Sun size={20} style={{ minWidth: 20 }} />}
+          {isLightMode ? (
+            <Moon size={22} style={{ minWidth: 22 }} className="group-hover:scale-110 transition-transform duration-300" />
+          ) : (
+            <Sun size={22} style={{ minWidth: 22 }} className="group-hover:scale-110 transition-transform duration-300" />
+          )}
           {!collapsed && <span>{isLightMode ? 'Dark Mode' : 'Light Mode'}</span>}
         </button>
         <button
           className={cn(
-            'flex items-center gap-4 rounded-[14px] px-4 py-3 font-medium text-muted-foreground transition-all hover:bg-muted hover:text-foreground',
+            'flex items-center gap-4 rounded-xl px-4 py-3.5 font-bold text-muted-foreground transition-all duration-300 hover:bg-secondary/80 hover:text-foreground group',
             collapsed && 'justify-center px-3'
           )}
         >
-          <Settings size={20} style={{ minWidth: 20 }} />
+          <Settings size={22} style={{ minWidth: 22 }} className="group-hover:scale-110 transition-transform duration-300" />
           {!collapsed && <span>Settings</span>}
         </button>
       </div>

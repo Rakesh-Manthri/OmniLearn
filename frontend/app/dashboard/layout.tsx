@@ -14,7 +14,15 @@ export default function DashboardLayout({
   const { user, loading } = useAuth();
   const router = useRouter();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-  const [isLightMode, setIsLightMode] = useState(false);
+  const [isLightMode, setIsLightMode] = useState(true);
+
+  useEffect(() => {
+    if (document.documentElement.classList.contains('light-theme')) {
+      setIsLightMode(true);
+    } else {
+      setIsLightMode(false);
+    }
+  }, []);
 
   useEffect(() => {
     if (!loading && !user) {

@@ -1,56 +1,98 @@
-# OmniLearn — Unified AI Learning Workspace
+# 🌌 OmniLearn — Unified AI Learning Workspace
+
+[![Framework - FastAPI](https://img.shields.io/badge/Backend-FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
+[![Frontend - Next.js 15](https://img.shields.io/badge/Frontend-Next.js%2015-000000?style=for-the-badge&logo=nextdotjs&logoColor=white)](https://nextjs.org/)
+[![Database - Supabase](https://img.shields.io/badge/Database-Supabase-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)](https://supabase.com/)
+[![AI Orchestration - Gemma](https://img.shields.io/badge/AI--Orchestration-Gemma%20%26%20Gemini-4285F4?style=for-the-badge&logo=google&logoColor=white)](https://ai.google.dev/gemma)
 
 **OmniLearn** is an immersive, high-fidelity online learning dashboard designed to eliminate cognitive friction, tool fragmentation, and the "paradox of choice" for modern autonomous students. It merges a curriculum planner, an active agentic tutor, a local privacy-first focus room, and an offline voice coach into a single context-aware environment that preserves the user's flow state.
 
-This project is built for the **Gemma 4 Impact Challenge** under the *"Future of Education"* track.
+This project was built for the **Gemma 4 Impact Challenge** under the *"Future of Education"* track.
 
 ---
 
-## 🏗️ Architecture & Features
+## 🏗️ Monorepo Architecture & Folder Structure
 
-To avoid port, package, and environment conflicts, the repository is split into clean backend and frontend workspaces:
+To completely eliminate package conflicts, port collisions, and execution overlaps, the repository is architected into clean, decoupled workspaces for the frontend and the backend:
 
 ```
 OmniLearn/
-├── frontend/               # Next.js 15 + React 19 Frontend Web App
-│   ├── app/                # App Router (Dashboard, Focus, Guider, Quiz, Voice)
-│   ├── components/         # Modular React Components (Tailwind + Shadcn UI)
-│   ├── context/            # Global Context Stores (AuthContext)
-│   ├── lib/                # Utilities (audioSynth.ts, supabase.ts, utils.ts)
-│   └── package.json        # Frontend Dependencies
+├── frontend/               # Next.js 15 Frontend Web App
+│   ├── app/                # App Router (Dashboard, Focus Room, AI Tutor, Quizzes, Voice Coach)
+│   │   ├── dashboard/      # Primary dashboard workspaces
+│   │   │   ├── courses/    # AI Course Generator & Course Library Viewer
+│   │   │   ├── focus/      # Glassmorphic Focus Room with Binaural Beat synthethizers
+│   │   │   ├── tutor/      # Socratic AI Tutor & pgvector RAG chatbot interface
+│   │   │   ├── voice/      # Experimental Voice Coach (oral explanation transcriber)
+│   │   │   └── quiz/       # Interactive Mastery Quizzes
+│   ├── components/         # Premium design components (SyllabusTree, Shadcn UI buttons, inputs)
+│   ├── context/            # Global context stores (AuthContext.tsx)
+│   ├── services/           # Api integration client (api.ts)
+│   └── package.json        # Frontend Node dependencies
 │
 ├── app/                    # FastAPI Async Python Backend
-│   ├── routes/             # Endpoints (course.py, tutor.py, session.py, quiz.py)
-│   ├── services/           # Orchestrators (gemma.py, rag.py, quiz.py)
+│   ├── routes/             # API Endpoints (course.py, tutor.py, session.py, quiz.py)
+│   ├── services/           # Heavy orchestrators (gemma.py, rag.py, quiz.py)
+│   ├── config.py           # Project Environment variables & Secrets config
 │   └── main.py             # FastAPI Server Entrypoint
 │
-└── README.md               # Documentation
+├── .gitignore              # Project-wide monorepo gitignore
+└── README.md               # Visual Documentation
 ```
 
-### 🌟 Core Workspace Modules
+---
 
-1.  **AI Course Generator:** Upload PDFs/images or type topics. Gemma dynamically generates JSON-structured multi-week syllabi, and our *Agentic Resource Fetcher* retrieves real YouTube video links, articles, and docs using the YouTube Data API and curated search fallbacks.
-2.  **Socratic AI Guider:** An elite conversational tutor utilizing Supabase `pgvector` RAG. Retrieves specific contextual embeddings from your uploaded course notes or syllabus and replies using strict Socratic pedagogy (asking guiding questions instead of giving flat answers).
-3.  **Adaptive Mastery Quizzes:** Test your knowledge. If you fail to achieve a 70% threshold, the backend `quiz.py` engine automatically calls Gemma to mutate your syllabus, inserting remedial sub-topics into your Supabase database in real time.
-4.  **Glassmorphic Focus Room:** A Pomodoro timer synchronized with a pure Web Audio API synthesizer. Mix Gamma/Alpha Binaural Beats and ambient rain without downloading external MP3s. Features a robust Markdown notes canvas that auto-saves directly to the Supabase `public.notes` table.
-5.  **Voice Coach (Web Speech API):** An experimental workspace (`/dashboard/voice`) featuring an animated, pulsing orb. It listens to you explain concepts orally, transcribes it locally, and reads Gemma's responses out loud using the browser's native `speechSynthesis`.
+## 🌟 Premium Core Workspace Modules
+
+### 1. 🎓 AI Course Generator
+*   **Intelligent Syllabus Architecture**: Enter any topic (e.g., *Quantum Computing*, *Rust Programming*) and choose your difficulty level and course duration.
+*   **Dual-Model Speed Optimization**: Driven primarily by **Gemma 4 (31B)** logic with a lightning-fast, high-capacity fallback to **Gemini 1.5 Flash** to maintain immediate responsiveness during traffic spikes.
+*   **Agentic Resource Fetcher**: Dynamically fetches genuine, non-placeholder learning resources (YouTube videos, scholarly articles, and technical documentation) using the YouTube Data API with curated search fallbacks.
+
+### 2. 🤖 Socratic AI Guider & pgvector RAG
+*   **Socratic Pedagogy Engine**: Instead of giving dry, copy-pasted answers, the AI tutor operates strictly on Socratic learning methodologies, responding with progressive, guiding questions to steer your critical thinking.
+*   **Multi-Format Note Embeddings**: Securely upload custom course notes (PDFs/Images) or choose module topics. The notes are chunked, embedded using Google's `text-embedding-004`, and stored in a Supabase PostgreSQL database using the `pgvector` extension.
+*   **Contextual Cosine Similarity**: Retrieves the exact reference chunks relevant to your chat message in real time to ground answers with maximum accuracy.
+
+### 3. 🎯 Adaptive Mastery Quizzes (Auto-Remediation)
+*   **Mastery Threshold Validation**: Dynamically generates targeted multi-question quizzes based on your course modules.
+*   **Dynamic Syllabus Mutation**: If your score falls below a **70% mastery threshold**, the backend `quiz.py` engine automatically calls Gemma to isolate your weak areas and dynamically mutate your syllabus—inserting specialized remedial sub-topics into your database in real time.
+
+### 4. 🧘 Glassmorphic Focus Room
+*   **Procedural Audio Synthesizer**: A Pomodoro timer integrated with a Web Audio API system. Procedurally mixes **Gamma/Alpha Binaural Beats** and ambient rain frequencies directly inside your browser—completely offline, without downloading external MP3s.
+*   **Markdown Notes Canvas**: A premium floating text editor that automatically saves your thoughts and code snippets directly to the Supabase database.
+
+### 5. 🎙️ Voice Coach (Feynman Technique)
+*   **Oral Explanation Orb**: An experimental verbal workspace featuring an animated, responsive SVG particle orb that pulses in sync with your speech.
+*   **Native Transcription**: Transcribes your spoken concepts locally via the browser's Web Speech API and reads back Gemma's responses using high-quality Speech Synthesis.
+
+---
+
+## 🔒 Security & Database Integration (RLS & RPCs)
+
+To safeguard user data while maintaining maximum read/write performance, the database architecture implements standard PostgreSQL **Row-Level Security (RLS)** in tandem with **`SECURITY DEFINER` Stored Procedures (RPCs)**:
+
+*   **Secure Insert Operations**: Permissive policies allow anonymous writes while enforcing strict foreign key constraints pointing to user profiles.
+*   **RPC Read/Delete Operations**:
+    *   `get_user_courses(p_user_id)`: Fetches a user's course library with aggregated module counts in a single optimized database join query, bypassing client-side SELECT RLS locks.
+    *   `get_course_by_id(p_course_id)`: Queries and aggregates a course along with all associated module rows into a nested JSON structure in one roundtrip.
+    *   `delete_course_cascade(p_course_id)`: Implements high-performance administrative cascading deletes for courses and modules safely.
 
 ---
 
 ## 🛠️ Technology Stack
 
 ### Frontend
-- **Framework**: Next.js 15 (App Router)
-- **Library**: React 19 (TypeScript)
-- **Styling**: Tailwind CSS v4 + Shadcn UI
-- **Audio**: Native Web Audio API (`AudioContext`)
-- **Voice**: Web Speech API (`webkitSpeechRecognition`)
+*   **Framework**: Next.js 15 (App Router)
+*   **Library**: React 19 (TypeScript)
+*   **Styling**: Tailwind CSS v4 + Shadcn UI (Glassmorphic, custom dark-mode colors)
+*   **Audio**: Native Web Audio API (`AudioContext`)
+*   **Voice**: Web Speech API (`webkitSpeechRecognition`)
 
 ### Backend
-- **Framework**: FastAPI (Python 3.12+)
-- **AI Orchestration**: Google GenAI SDK (`gemini-embedding-2` for RAG, `gemma-4-31b-it` for logic)
-- **Database**: Supabase (PostgreSQL with `pgvector` extension)
-- **Features**: Semantic Cosine Similarity search, RLS policies, real-time sync
+*   **Framework**: FastAPI (Python 3.12+)
+*   **AI Orchestration**: Google GenAI SDK (`gemini-embedding-2` for RAG, `gemma-4-31b-it` for logic)
+*   **Database**: Supabase (PostgreSQL with `pgvector` extension)
 
 ---
 
@@ -58,36 +100,46 @@ OmniLearn/
 
 ### 1. Database Setup (Supabase)
 1. Create a Supabase project and enable `pgvector`.
-2. Apply the schema (tables: `profiles`, `courses`, `modules`, `embeddings`, `quiz_attempts`, `focus_sessions`, `notes`).
-3. Set your environment variables:
-   - `frontend/.env.local`: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `NEXT_PUBLIC_API_URL`
-   - `.env` (root): `GEMINI_API_KEY`, `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `YOUTUBE_API_KEY`
+2. Set up your environment variables:
+   *   **Frontend Env (`frontend/.env.local`)**:
+       ```env
+       NEXT_PUBLIC_SUPABASE_URL=https://your-supabase-project.supabase.co
+       NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+       NEXT_PUBLIC_API_URL=http://localhost:8000
+       ```
+   *   **Backend Env (`.env` in root)**:
+       ```env
+       GEMINI_API_KEY=your-google-gemini-key
+       SUPABASE_URL=https://your-supabase-project.supabase.co
+       SUPABASE_ANON_KEY=your-anon-key
+       YOUTUBE_API_KEY=your-youtube-data-api-key
+       ```
 
-### 2. Running the FastAPI Backend
+### 2. Run the FastAPI Backend
 ```powershell
-# Ensure you are at the workspace root
+# Navigate to the workspace root
 cd c:\Projects\OmniLearn
 
 # Activate the virtual environment
 .venv\Scripts\Activate.ps1
 
-# Install backend dependencies
+# Install dependencies
 pip install -r requirements.txt
 
-# Run the backend server with hot-reloading
-uvicorn app.main:app --reload
+# Start the reload server
+uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 ```
-👉 API docs: **[http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)**.
+👉 Interactive API Docs: **[http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)**
 
-### 3. Running the Next.js Frontend
+### 3. Run the Next.js Frontend
 ```powershell
-# Navigate into the frontend workspace
-cd frontend
+# Open a new terminal and navigate to the frontend directory
+cd c:\Projects\OmniLearn\frontend
 
-# Install UI dependencies
+# Install node dependencies
 npm install
 
-# Start the Next.js development server
+# Start the development server
 npm run dev
 ```
-👉 Open **[http://localhost:3000](http://localhost:3000)** in your browser.
+👉 Open **[http://localhost:3000](http://localhost:3000)** in your browser!

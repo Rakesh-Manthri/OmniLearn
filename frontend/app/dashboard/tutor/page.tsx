@@ -173,12 +173,11 @@ export default function TutorPage() {
   };
 
   return (
-    <div className="flex flex-1 flex-col animate-fade-in p-6 bg-gradient-to-b from-background via-background/95 to-secondary/10">
-      <div className="max-w-5xl mx-auto w-full flex flex-1 flex-col">
+    <div className="flex flex-1 flex-col animate-fade-in p-8 lg:p-12 bg-gradient-to-b from-background via-background/95 to-secondary/10">
+      <div className="max-w-7xl mx-auto w-full flex flex-1 flex-col gap-8">
         {/* Tutor Header Card */}
-        <Card className="border-border/40 bg-card/60 backdrop-blur-xl rounded-3xl p-6 mb-6 shadow-2xl relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl" />
-          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative z-10">
+        <Card className="border-border shadow-md bg-card rounded-3xl p-8 lg:p-10 overflow-hidden relative">
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-8 relative z-10">
             <div className="flex items-center gap-4">
               <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-accent shadow-lg shadow-primary/20">
                 <GraduationCap size={28} className="text-primary-foreground animate-pulse" />
@@ -225,11 +224,11 @@ export default function TutorPage() {
         </Card>
 
         {/* Chat Interface */}
-        <Card className="flex-1 flex flex-col border-border/40 bg-card/40 backdrop-blur-md rounded-3xl overflow-hidden shadow-xl min-h-[500px]">
-          <CardContent className="flex-1 flex flex-col p-6 overflow-hidden">
+        <Card className="flex-1 flex flex-col border-border shadow-md bg-card rounded-3xl overflow-hidden min-h-[600px]">
+          <CardContent className="flex-1 flex flex-col p-8 lg:p-10 overflow-hidden">
             {/* Timeline */}
-            <ScrollArea className="flex-1 pr-4">
-              <div className="flex flex-col gap-6 py-2">
+            <ScrollArea className="flex-1 pr-6">
+              <div className="flex flex-col gap-8 py-2">
                 {history.map((msg, i) => (
                   <div
                     key={i}
@@ -287,18 +286,18 @@ export default function TutorPage() {
             </ScrollArea>
 
             {/* Input Controls */}
-            <div className="mt-4 flex gap-3 border border-border/50 bg-secondary/30 p-2 rounded-2xl">
+            <div className="mt-8 flex gap-4 border border-border/50 bg-secondary/30 p-3 rounded-3xl">
               <input
                 type="text"
-                className="flex-1 bg-transparent px-4 py-3 text-base text-foreground outline-none placeholder:text-muted-foreground/60"
+                className="flex-1 bg-transparent px-6 py-4 text-lg text-foreground outline-none placeholder:text-muted-foreground/60"
                 placeholder="Discuss code, upload files, or ask complex questions..."
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSend()}
                 disabled={isLoading}
               />
-              <Button onClick={handleSend} disabled={isLoading || !message.trim()} className="rounded-xl px-5 h-12 shadow-lg hover:shadow-xl active:scale-95 transition-all">
-                <Send size={18} className="mr-1.5" />
+              <Button onClick={handleSend} disabled={isLoading || !message.trim()} className="rounded-2xl px-8 h-[60px] shadow-lg hover:shadow-xl active:scale-95 transition-all text-lg font-bold">
+                <Send size={22} className="mr-2" />
                 <span>Send</span>
               </Button>
             </div>

@@ -89,33 +89,33 @@ export default function CourseGeneratorPage() {
   };
 
   return (
-    <div className="mx-auto flex w-full max-w-[900px] flex-col gap-8 animate-fade-in">
+    <div className="mx-auto flex w-full max-w-[1000px] flex-col gap-12 lg:gap-16 animate-fade-in">
       {/* Header */}
-      <div className="text-center mb-4">
-        <h2 className="font-heading text-[2.5rem] font-bold mb-3">
+      <div className="text-center mb-6 lg:mb-10">
+        <h2 className="font-heading text-5xl lg:text-6xl font-black mb-6 tracking-tight">
           AI Course Generator
         </h2>
-        <p className="text-lg text-muted-foreground max-w-xl mx-auto">
+        <p className="text-xl lg:text-2xl text-muted-foreground max-w-2xl mx-auto font-medium leading-relaxed">
           Enter any topic and let Gemma architect a structured learning roadmap with curated resources.
         </p>
       </div>
 
       {/* Generation Form */}
-      <Card className="rounded-3xl border-2 border-dashed border-primary/30 bg-primary/[0.02] p-0">
-        <CardContent className="flex flex-col items-center p-10 gap-6">
-          <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-accent-tertiary shadow-lg">
-            <Sparkles size={28} className="text-white" />
+      <Card className="border-border shadow-md rounded-3xl bg-card">
+        <CardContent className="flex flex-col items-center p-8 lg:p-12 gap-8">
+          <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 mb-2">
+            <Sparkles size={28} className="text-primary" />
           </div>
 
           {/* Topic Input */}
-          <div className="flex w-full max-w-[600px] gap-2">
+          <div className="flex w-full max-w-[700px] gap-2">
             <Input
-              placeholder="e.g. Quantum Computing, Rust Programming, Machine Learning..."
+              placeholder="e.g. Quantum Computing, Rust Programming..."
               value={topic}
               onChange={(e) => setTopic(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleGenerate()}
               disabled={isLoading}
-              className="flex-1 h-12 text-base rounded-xl"
+              className="flex-1 h-14 text-lg rounded-xl px-6 shadow-sm border-border/50"
             />
           </div>
 
@@ -167,12 +167,12 @@ export default function CourseGeneratorPage() {
             onClick={handleGenerate}
             disabled={isLoading || !topic.trim()}
             size="lg"
-            className="rounded-xl px-10 text-base font-semibold shadow-[0_8px_20px_-4px_rgba(99,102,241,0.4)]"
+            className="rounded-xl px-10 h-14 text-lg font-bold mt-4 shadow-sm hover:shadow-md transition-all"
           >
             {isLoading ? (
-              <><Loader2 size={18} className="mr-2 animate-spin" /> Generating Syllabus...</>
+              <><Loader2 size={20} className="mr-2 animate-spin" /> Architecting Syllabus...</>
             ) : (
-              <><Sparkles size={18} className="mr-2" /> Generate Course</>
+              <><Sparkles size={20} className="mr-2" /> Architect Course</>
             )}
           </Button>
 

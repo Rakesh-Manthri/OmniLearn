@@ -11,8 +11,9 @@ import {
   Send,
   Zap,
   Loader2,
+  Sparkles
 } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -25,7 +26,8 @@ const container = {
   show: {
     opacity: 1,
     transition: {
-      staggerChildren: 0.1
+      staggerChildren: 0.1,
+      delayChildren: 0.05,
     }
   }
 };
@@ -44,7 +46,7 @@ export default function DashboardPage() {
   // Gemma Coach chat state
   const [coachInput, setCoachInput] = useState('');
   const [coachMessages, setCoachMessages] = useState<Array<{ role: 'model' | 'user'; text: string }>>([
-    { role: 'model', text: "Hello! I am your AI Coach. I notice you haven't started a session yet today. Enter a topic above to generate a course, or ask me any question to begin!" }
+    { role: 'model', text: "Hello! I am your AI Coach. Whenever you're ready, enter a topic to generate a course, or ask me any question to begin." }
   ]);
   const [sendingMessage, setSendingMessage] = useState(false);
 
@@ -56,7 +58,7 @@ export default function DashboardPage() {
           setCourses(loadedCourses);
           if (loadedCourses.length > 0) {
             setCoachMessages([
-              { role: 'model', text: `Welcome back! I see you are master-planning "${loadedCourses[0].course_name}". Ready to dive back in or test your understanding with a Socratic dialogue?` }
+              { role: 'model', text: `Welcome back. You are currently exploring "${loadedCourses[0].course_name}". Are we diving back into the material today?` }
             ]);
           }
         })
@@ -85,7 +87,7 @@ export default function DashboardPage() {
       );
       setCoachMessages([...currentMessages, { role: 'model', text: res.response }]);
     } catch {
-      setCoachMessages([...currentMessages, { role: 'model', text: "I'm having trouble reaching my neural pathways right now. Make sure the backend server is running!" }]);
+      setCoachMessages([...currentMessages, { role: 'model', text: "I'm having trouble connecting right now." }]);
     } finally {
       setSendingMessage(false);
     }
@@ -98,44 +100,46 @@ export default function DashboardPage() {
       variants={container}
       initial="hidden"
       animate="show"
-      className="grid grid-cols-[2fr_1fr] gap-12 max-xl:grid-cols-1"
+      className="grid grid-cols-1 lg:grid-cols-[1fr_350px] gap-8 p-4 md:p-8 max-w-7xl mx-auto w-full"
     >
-      {/* Left Column */}
-      <div className="flex flex-col gap-10">
-        {/* Hero Card */}
+      {/* ── Left Column (Main Content) ── */}
+      <div className="flex flex-col gap-8">
+        
+        {/* ── Hero Card ── */}
         <motion.div variants={item}>
           {loading ? (
-            <Card className="rounded-[2rem] bg-card/60 border-border/60 p-16 flex items-center justify-center min-h-[320px]">
-              <Loader2 className="animate-spin text-primary" size={40} />
+            <Card className="flex items-center justify-center min-h-[300px] border-border shadow-sm rounded-2xl bg-card">
+              <Loader2 className="animate-spin text-primary" size={32} />
             </Card>
           ) : latestCourse ? (
-            <Card className="relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-card to-card/40 p-0 shadow-[var(--shadow-premium)] border-border/60 group">
-              <div className="pointer-events-none absolute -top-1/2 -right-[10%] h-[500px] w-[500px] rounded-full bg-[radial-gradient(circle,rgba(37,99,235,0.15)_0%,rgba(0,0,0,0)_70%)] group-hover:scale-110 transition-transform duration-1000 mix-blend-multiply dark:mix-blend-screen" />
-              <div className="pointer-events-none absolute -bottom-1/2 -left-[10%] h-[500px] w-[500px] rounded-full bg-[radial-gradient(circle,rgba(139,92,246,0.1)_0%,rgba(0,0,0,0)_70%)] mix-blend-multiply dark:mix-blend-screen" />
-              
-              <CardContent className="relative z-10 p-12 md:p-16">
-                <Badge variant="outline" className="mb-6 border-accent/20 bg-accent/10 text-accent font-bold px-4 py-1.5 shadow-sm">
+            <Card className="border-border shadow-md rounded-3xl bg-card overflow-hidden relative">
+              <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl" />
+              <CardContent className="p-8 md:p-12 relative z-10">
+                <Badge variant="secondary" className="mb-6 rounded-full px-4 py-1.5 font-medium text-sm">
                   Active Roadmap
                 </Badge>
-                <h2 className="font-heading text-5xl md:text-6xl font-extrabold leading-[1.05] tracking-tight mb-5 text-foreground drop-shadow-sm">
+                
+                <h2 className="text-3xl md:text-5xl font-bold tracking-tight mb-4 text-foreground">
                   {latestCourse.course_name}
                 </h2>
-                <p className="text-xl text-muted-foreground mb-10 max-w-[85%] font-medium leading-relaxed">
-                  You generated this roadmap with {latestCourse.module_count} structured modules and custom-tailored Socratic paths. Ready to resume?
+                
+                <p className="text-lg text-muted-foreground mb-8 max-w-2xl">
+                  You generated this roadmap with <strong>{latestCourse.module_count} structured modules</strong>. Step into your study zone whenever you are ready.
                 </p>
-                <div className="flex flex-col sm:flex-row gap-5">
+                
+                <div className="flex flex-col sm:flex-row gap-4">
                   <Button
                     size="lg"
                     onClick={() => router.push('/dashboard/courses')}
-                    className="rounded-full px-8 py-7 shadow-[var(--shadow-premium)] hover:-translate-y-1 hover:shadow-2xl transition-all duration-300 font-bold text-lg bg-primary text-primary-foreground"
+                    className="rounded-xl px-8 h-14 font-semibold text-base shadow-sm"
                   >
-                    <Play size={20} fill="currentColor" className="mr-2" /> Resume Study Path
+                    <Play size={20} className="mr-2" /> Resume Study Path
                   </Button>
                   <Button
                     variant="outline"
                     size="lg"
                     onClick={() => router.push('/dashboard/tutor')}
-                    className="rounded-full px-8 py-7 glass-panel hover:bg-white/10 dark:hover:bg-white/5 transition-all duration-300 border-border font-bold text-lg hover:-translate-y-1"
+                    className="rounded-xl px-8 h-14 font-semibold text-base bg-background/50 hover:bg-accent"
                   >
                     <Search size={20} className="mr-2" /> Socratic AI Coach
                   </Button>
@@ -143,26 +147,28 @@ export default function DashboardPage() {
               </CardContent>
             </Card>
           ) : (
-            <Card className="relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-card to-card/40 p-0 shadow-[var(--shadow-premium)] border-border/60 group">
-              <div className="pointer-events-none absolute -top-1/2 -right-[10%] h-[500px] w-[500px] rounded-full bg-[radial-gradient(circle,rgba(37,99,235,0.15)_0%,rgba(0,0,0,0)_70%)] group-hover:scale-110 transition-transform duration-1000 mix-blend-multiply dark:mix-blend-screen" />
-              
-              <CardContent className="relative z-10 p-12 md:p-16">
-                <Badge variant="outline" className="mb-6 border-primary/20 bg-primary/10 text-primary font-bold px-4 py-1.5 shadow-sm">
+            <Card className="border-border shadow-md rounded-3xl bg-card overflow-hidden relative">
+              <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl" />
+              <CardContent className="p-8 md:p-12 relative z-10">
+                <Badge variant="secondary" className="mb-6 rounded-full px-4 py-1.5 font-medium text-sm">
                   Welcome to OmniLearn
                 </Badge>
-                <h2 className="font-heading text-5xl md:text-6xl font-extrabold leading-[1.05] tracking-tight mb-5 text-foreground drop-shadow-sm">
-                  No courses generated yet
+                
+                <h2 className="text-3xl md:text-5xl font-bold tracking-tight mb-4 text-foreground">
+                  A blank canvas.
                 </h2>
-                <p className="text-xl text-muted-foreground mb-10 max-w-[85%] font-medium leading-relaxed">
-                  Enter any engineering or complex science topic in our Course Generator to architect a premium, bespoke Socratic syllabus immediately.
+                
+                <p className="text-lg text-muted-foreground mb-8 max-w-2xl">
+                  Enter any engineering or complex science topic in our Course Generator to architect a custom syllabus.
                 </p>
-                <div className="flex flex-col sm:flex-row gap-5">
+                
+                <div className="flex flex-col sm:flex-row gap-4">
                   <Button
                     size="lg"
                     onClick={() => router.push('/dashboard/courses')}
-                    className="rounded-full px-8 py-7 shadow-[var(--shadow-premium)] hover:-translate-y-1 hover:shadow-2xl transition-all duration-300 font-bold text-lg bg-primary text-primary-foreground"
+                    className="rounded-xl px-8 h-14 font-semibold text-base shadow-sm"
                   >
-                    <BrainCircuit size={20} className="mr-2" /> Create Syllabus
+                    <BrainCircuit size={20} className="mr-2" /> Architect Syllabus
                   </Button>
                 </div>
               </CardContent>
@@ -170,26 +176,28 @@ export default function DashboardPage() {
           )}
         </motion.div>
 
-        {/* Tools Grid */}
+        {/* ── Tools Grid ── */}
         <motion.div variants={item}>
-          <h3 className="text-2xl font-bold mb-6 font-heading text-foreground">Your Toolkit</h3>
-          <div className="grid grid-cols-3 gap-6 max-lg:grid-cols-1">
+          <h3 className="text-2xl font-bold mb-6 text-foreground tracking-tight">
+            Your Toolkit
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {[
-              { icon: BrainCircuit, title: 'Course Generator', desc: 'Turn any topic into a structured study path instantly.', href: '/dashboard/courses', color: 'text-blue-500' },
-              { icon: Timer, title: 'Focus Room', desc: 'Immersive Pomodoro environment with ambient noise.', href: '/dashboard/focus', color: 'text-amber-500' },
-              { icon: Search, title: 'AI Guider', desc: 'Search across all your materials and get AI answers.', href: '/dashboard/tutor', color: 'text-emerald-500' },
+              { icon: BrainCircuit, title: 'Course Generator', desc: 'Turn any topic into a study path.', href: '/dashboard/courses', color: 'text-blue-500', bg: 'bg-blue-500/10' },
+              { icon: Timer, title: 'Focus Room', desc: 'Immersive deep-work environment.', href: '/dashboard/focus', color: 'text-amber-500', bg: 'bg-amber-500/10' },
+              { icon: Search, title: 'AI Guider', desc: 'Search and query across your materials.', href: '/dashboard/tutor', color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
             ].map((tool) => (
               <Card
                 key={tool.title}
-                className="cursor-pointer rounded-3xl transition-all duration-300 hover:-translate-y-2 hover:shadow-[var(--shadow-premium)] p-0 group border-border/50 bg-card/50 backdrop-blur-sm"
+                className="cursor-pointer rounded-2xl transition-all hover:shadow-md hover:border-primary/30 bg-card border-border shadow-sm group"
                 onClick={() => router.push(tool.href)}
               >
-                <CardContent className="p-8">
-                  <div className={`mb-6 flex h-14 w-14 items-center justify-center rounded-2xl glass-panel ${tool.color} shadow-sm group-hover:scale-110 transition-transform duration-300`}>
-                    <tool.icon size={26} />
+                <CardContent className="p-6">
+                  <div className={`mb-5 flex h-14 w-14 items-center justify-center rounded-xl ${tool.bg} ${tool.color} group-hover:scale-105 transition-transform`}>
+                    <tool.icon size={28} />
                   </div>
-                  <h4 className="text-xl font-bold mb-3 font-heading text-foreground">{tool.title}</h4>
-                  <p className="text-[0.95rem] font-medium text-muted-foreground leading-relaxed">{tool.desc}</p>
+                  <h4 className="text-lg font-bold mb-2 text-foreground">{tool.title}</h4>
+                  <p className="text-sm text-muted-foreground">{tool.desc}</p>
                 </CardContent>
               </Card>
             ))}
@@ -197,87 +205,86 @@ export default function DashboardPage() {
         </motion.div>
       </div>
 
-      {/* Right Column */}
+      {/* ── Right Column (Sidebar AI & Progress) ── */}
       <div className="flex flex-col gap-8">
-        {/* AI Widget */}
-        <motion.div variants={item} className="flex flex-1">
-          <Card className="flex flex-1 flex-col rounded-[2rem] p-0 border-border/50 shadow-lg relative overflow-hidden bg-card/60 backdrop-blur-md min-h-[380px]">
-            <div className="absolute top-0 w-full h-1 bg-gradient-to-r from-primary via-accent-secondary to-accent-tertiary" />
-            <CardHeader className="px-8 pt-8 pb-2">
-              <CardTitle className="flex items-center gap-3 text-2xl font-heading font-bold">
-                <div className="bg-accent-tertiary/20 p-2 rounded-xl">
-                  <Zap size={22} className="text-accent-tertiary" />
-                </div>
+        
+        {/* ── Progress Widget ── */}
+        <motion.div variants={item}>
+          <Card className="rounded-3xl border-border shadow-sm bg-card">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg font-bold">Weekly Goal</CardTitle>
+              <CardDescription>
+                {courses.length > 0 ? 'Consistent progress' : 'Take your first step'}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="h-3 w-full overflow-hidden rounded-full bg-secondary">
+                <div 
+                  className="h-full rounded-full bg-primary transition-all duration-1000 ease-out" 
+                  style={{ width: courses.length > 0 ? '45%' : '0%' }}
+                />
+              </div>
+              <div className="mt-3 flex justify-between text-sm font-semibold text-muted-foreground">
+                <span className="text-foreground">{courses.length > 0 ? '45%' : '0%'}</span>
+                <span>{courses.length > 0 ? 'Progress' : 'No hours logged'}</span>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        {/* ── AI Widget ── */}
+        <motion.div variants={item} className="flex flex-col flex-1 min-h-[400px]">
+          <Card className="flex flex-1 flex-col rounded-3xl border-border shadow-sm bg-card">
+            <CardHeader className="border-b border-border/50 pb-4">
+              <CardTitle className="flex items-center gap-3 text-xl font-bold">
+                <Zap size={20} className="text-primary" />
                 Gemma Coach
               </CardTitle>
             </CardHeader>
-            <CardContent className="flex flex-1 flex-col p-8 pt-4">
-              <div className="flex-1 space-y-4 max-h-[220px] overflow-y-auto pr-1">
+            
+            <CardContent className="flex flex-1 flex-col p-4">
+              <div className="flex-1 space-y-4 overflow-y-auto pr-2 mb-4">
                 {coachMessages.map((msg, idx) => (
                   <div
                     key={idx}
-                    className={`glass-panel rounded-2xl p-4 text-[0.95rem] font-medium leading-relaxed shadow-sm ${
+                    className={`rounded-2xl p-4 text-sm leading-relaxed ${
                       msg.role === 'model'
-                        ? 'rounded-tl-sm border-l-2 border-l-accent-tertiary text-foreground bg-white/40 dark:bg-white/5'
-                        : 'rounded-tr-sm border-r-2 border-r-primary text-primary-foreground bg-primary/90 ml-8'
+                        ? 'rounded-tl-sm bg-secondary text-secondary-foreground mr-8'
+                        : 'rounded-tr-sm bg-primary text-primary-foreground ml-8'
                     }`}
                   >
                     {msg.text}
                   </div>
                 ))}
                 {sendingMessage && (
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Loader2 className="animate-spin text-accent-tertiary" size={16} /> Thinking...
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground ml-2">
+                    <Loader2 className="animate-spin text-primary" size={16} /> Typing...
                   </div>
                 )}
               </div>
-              <div className="mt-6 flex gap-3 items-center">
+              
+              <div className="mt-auto flex gap-2 items-center">
                 <Input
-                  placeholder="Ask a coach or request guidance..."
+                  placeholder="Ask a question..."
                   value={coachInput}
                   onChange={(e) => setCoachInput(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleSendCoachMsg()}
                   disabled={sendingMessage}
-                  className="flex-1 rounded-full h-14 px-6 bg-secondary/50 border-border shadow-inner font-medium focus-visible:ring-primary"
+                  className="flex-1 rounded-xl h-12 bg-background border-border/50"
                 />
                 <Button 
                   size="icon" 
                   onClick={handleSendCoachMsg}
                   disabled={sendingMessage || !coachInput.trim()}
-                  className="rounded-full h-14 w-14 shadow-md bg-primary hover:bg-primary/90 hover:scale-105 transition-all"
+                  className="rounded-xl h-12 w-12 shadow-sm"
                 >
-                  <Send size={20} className="text-primary-foreground" />
+                  <Send size={18} />
                 </Button>
               </div>
             </CardContent>
           </Card>
         </motion.div>
 
-        {/* Progress Widget */}
-        <motion.div variants={item}>
-          <Card className="rounded-[2rem] p-0 border-border/50 shadow-lg bg-card/60 backdrop-blur-md">
-            <CardContent className="p-8">
-              <h3 className="text-xl font-bold mb-3 font-heading">Weekly Goal</h3>
-              <p className="text-sm font-medium text-muted-foreground mb-5">
-                {courses.length > 0 ? 'Roadmap started' : 'No active roadmaps'}
-              </p>
-              <div>
-                <div className="h-3 w-full overflow-hidden rounded-full bg-secondary shadow-inner">
-                  <div 
-                    className="h-full rounded-full bg-gradient-to-r from-primary via-accent-secondary to-accent-tertiary relative transition-all duration-500" 
-                    style={{ width: courses.length > 0 ? '45%' : '0%' }}
-                  >
-                    <div className="absolute top-0 right-0 bottom-0 w-8 bg-white/30 blur-[2px] animate-pulse" />
-                  </div>
-                </div>
-                <div className="mt-3 flex justify-between text-sm font-bold text-muted-foreground">
-                  <span className="text-primary">{courses.length > 0 ? '45%' : '0%'}</span>
-                  <span>{courses.length > 0 ? 'Progress' : 'No hours logged'}</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
       </div>
     </motion.div>
   );

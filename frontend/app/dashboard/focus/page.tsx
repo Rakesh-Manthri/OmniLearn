@@ -375,15 +375,15 @@ export default function FocusRoomPage() {
   const displaySecs = (timeLeft % 60).toString().padStart(2, '0');
 
   return (
-    <div className="flex flex-1 flex-col gap-6 p-6 animate-fade-in max-w-7xl mx-auto w-full">
+    <div className="flex flex-1 flex-col gap-12 lg:gap-16 p-8 lg:p-12 animate-fade-in max-w-[1400px] mx-auto w-full">
       
       {/* Header Info */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-8">
         <div>
-          <h2 className="text-3xl font-extrabold tracking-tight text-foreground flex items-center gap-2">
-            Focus Room <Zap size={22} className="text-primary fill-primary/10" />
+          <h2 className="text-4xl lg:text-5xl font-black tracking-tight text-foreground flex items-center gap-4 mb-3">
+            Focus Room <Zap size={28} className="text-primary fill-primary/10" />
           </h2>
-          <p className="text-muted-foreground mt-0.5">Link a course, synthesize ambient sound waves, and log deep work blocks.</p>
+          <p className="text-xl text-muted-foreground mt-0.5 font-medium">Link a course, synthesize ambient sound waves, and log deep work blocks.</p>
         </div>
 
         {/* Course Linker Panel */}
@@ -421,15 +421,14 @@ export default function FocusRoomPage() {
         </div>
       </div>
 
-      <div className="grid lg:grid-cols-12 gap-6 items-stretch">
+      <div className="grid lg:grid-cols-12 gap-12 lg:gap-16 items-stretch mt-6">
         
         {/* LEFT COLUMN: Pomodoro, Timer state, Sound waves, Stats */}
-        <div className="lg:col-span-5 flex flex-col gap-6">
+        <div className="lg:col-span-5 flex flex-col gap-10">
           
           {/* Timer Card */}
-          <Card className="border-border/40 bg-card/65 backdrop-blur-xl rounded-3xl overflow-hidden shadow-2xl relative">
-            <div className="absolute top-0 right-0 w-48 h-48 bg-primary/5 rounded-full blur-3xl" />
-            <CardContent className="p-8 flex flex-col items-center">
+          <Card className="border-border shadow-md bg-card rounded-3xl overflow-hidden relative">
+            <CardContent className="p-8 lg:p-10 flex flex-col items-center">
               
               {/* Mode Toggles */}
               <div className="flex rounded-2xl bg-secondary/50 p-1 mb-8 w-full max-w-[340px] border border-border/20">
@@ -456,7 +455,7 @@ export default function FocusRoomPage() {
               </div>
 
               {/* Circular SVG Timer */}
-              <div className="relative h-64 w-64 flex items-center justify-center mb-8">
+              <div className="relative h-72 w-72 flex items-center justify-center mb-10 scale-110">
                 {/* SVG background circle and progress overlay */}
                 <svg className="absolute inset-0 h-full w-full -rotate-90">
                   <circle
@@ -539,7 +538,7 @@ export default function FocusRoomPage() {
           </Card>
 
           {/* Audio Beats Synthesizer Card */}
-          <Card className="border-border/40 bg-card/65 backdrop-blur-xl rounded-3xl p-6 shadow-xl relative overflow-hidden">
+          <Card className="border-border shadow-md bg-card rounded-3xl p-8 shadow-sm relative overflow-hidden">
             <h4 className="font-bold text-base text-foreground flex items-center gap-2 mb-4">
               <Headphones size={18} className="text-primary" /> Integrated Sound Wave Generator
             </h4>
@@ -580,7 +579,7 @@ export default function FocusRoomPage() {
           </Card>
 
           {/* Focus Statistics Grid */}
-          <Card className="border-border/40 bg-card/65 backdrop-blur-xl rounded-3xl p-6 shadow-xl relative overflow-hidden flex-1">
+          <Card className="border-border shadow-md bg-card rounded-3xl p-8 shadow-sm relative overflow-hidden flex-1">
             <h4 className="font-bold text-base text-foreground flex items-center gap-2 mb-4">
               <HeartPulse size={18} className="text-primary animate-pulse" /> Focus Workspace Performance
             </h4>
@@ -619,10 +618,10 @@ export default function FocusRoomPage() {
         {/* RIGHT COLUMN: Note Taking Workspace, Autosave status */}
         <div className="lg:col-span-7 flex flex-col">
           
-          <Card className="border-border/40 bg-card/65 backdrop-blur-xl rounded-3xl overflow-hidden shadow-2xl flex-1 flex flex-col min-h-[600px]">
+          <Card className="border-border shadow-md bg-card rounded-3xl overflow-hidden flex-1 flex flex-col min-h-[700px]">
             
             {/* Notes Header Panel */}
-            <div className="border-b border-border/40 p-5 bg-secondary/10 flex items-center justify-between gap-4">
+            <div className="border-b border-border/20 p-8 lg:p-10 bg-secondary/5 flex items-center justify-between gap-6">
               <div className="flex-1 flex items-center gap-3">
                 <div className="h-9 w-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
                   <FileText size={18} />

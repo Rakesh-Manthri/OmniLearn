@@ -205,45 +205,58 @@ class GemmaService:
         client = GemmaService._get_client()
 
         prompt = f"""
-Act as a university curriculum architect. Design a logically sequential study roadmap.
+You are an elite university curriculum architect. Your task is to design a highly structured, logically sequential study roadmap.
 
-- Subject: {topic}
-- Estimated Duration: {duration_weeks} weeks
-- Intended Target Difficulty: {difficulty}
+COURSE PARAMETERS:
+- Subject/Topic: {topic}
+- Duration: {duration_weeks} weeks
+- Target Difficulty: {difficulty}
 
-Return only valid JSON. Do not include markdown fences or extra commentary.
-The JSON object must have this exact shape:
+INSTRUCTIONS:
+1. Create exactly {duration_weeks} modules, one for each week.
+2. Ensure progressive learning: start with fundamentals and advance towards complex concepts.
+3. For each week, define exactly 2 clear, actionable learning objectives.
+4. For each week, define exactly 2 specific topics. Provide a detailed 1-2 sentence description for each topic.
+5. Return ONLY a valid JSON object matching the exact schema below. Do not include markdown formatting like ```json or any conversational text.
+
+EXPECTED JSON SCHEMA:
 {{
-  "course_name": "string",
-  "target_audience": "string",
-  "difficulty_level": "string",
+  "course_name": "A compelling, professional title for the course",
+  "target_audience": "Who this course is designed for",
+  "difficulty_level": "{difficulty}",
   "modules": [
     {{
       "week_number": 1,
-      "module_title": "string",
-      "objectives": ["string"],
+      "module_title": "Title of the module/week",
+      "objectives": ["Objective 1", "Objective 2"],
       "topics": [
-        {{"title": "string", "description": "string"}}
+        {{"title": "Topic 1 Name", "description": "Detailed description of topic 1"}},
+        {{"title": "Topic 2 Name", "description": "Detailed description of topic 2"}}
       ]
     }}
   ]
 }}
-
-Create exactly {duration_weeks} modules.
-Keep each module concise with 2 objectives and 2 topics.
 """
 
         response = await client.aio.models.generate_content(
             model=settings.GEMINI_MODEL,
             contents=prompt,
             config=types.GenerateContentConfig(
-                response_mime_type="application/json",
                 max_output_tokens=2048,
                 temperature=0.4,
             ),
         )
 
-        return GeneratedCourse.model_validate_json(response.text)
+        text = response.text.strip()
+        if text.startswith("```json"):
+            text = text[7:]
+        if text.startswith("```"):
+            text = text[3:]
+        if text.endswith("```"):
+            text = text[:-3]
+        text = text.strip()
+
+        return GeneratedCourse.model_validate_json(text)
 
     @staticmethod
     async def fetch_resources_for_module(
@@ -253,46 +266,57 @@ Keep each module concise with 2 objectives and 2 topics.
         client = GemmaService._get_client()
 
         prompt = f"""
-You are an educational resource curator. Find the best learning resources for a student.
+You are an expert educational resource curator and instructional designer. Your mission is to find the absolute best, highest-quality learning materials for a student studying the following subject:
 
-Course: {course_name}
-Module: {module_title}
-Topics to cover: {', '.join(topics)}
+Context:
+- Course Name: {course_name}
+- Current Module: {module_title}
+- Specific Topics to Cover: {', '.join(topics)}
 
-Use the available tools to search for:
-1. At least 2 YouTube video tutorials
-2. At least 2 educational articles
-3. At least 1 documentation reference
+Guidelines for Curation:
+1. Relevancy: Ensure all resources perfectly align with the specific topics mentioned above. Do not fetch generic resources.
+2. Quality: Prioritize highly-rated, modern, and widely recognized sources (e.g., official docs, reputable articles, and high-quality YouTube educators).
+3. Diversity: Provide a healthy mix of theoretical explanations and practical, hands-on tutorials.
 
-Call the tools now to fetch resources.
+Required Actions:
+Using the provided tools, you MUST execute searches to find exactly:
+- 2 distinct, high-quality YouTube video tutorials.
+- 2 comprehensive educational articles or blog posts.
+- 1 piece of official documentation or authoritative reference.
+
+Do not provide commentary. Immediately call the provided search tools to fulfill this request.
 """
 
         all_resources: List[Resource] = []
 
-        response = await client.aio.models.generate_content(
-            model=settings.GEMINI_MODEL,
-            contents=prompt,
-            config=types.GenerateContentConfig(
-                temperature=0.3,
-                max_output_tokens=1024,
-            ),
-            tools=RESOURCE_TOOLS,
-        )
+        try:
+            response = await client.aio.models.generate_content(
+                model=settings.GEMINI_MODEL,
+                contents=prompt,
+                config=types.GenerateContentConfig(
+                    temperature=0.3,
+                    max_output_tokens=1024,
+                ),
+                tools=RESOURCE_TOOLS,
+            )
 
-        # Process function calls from the model response
-        if response.candidates and response.candidates[0].content:
-            for part in response.candidates[0].content.parts:
-                if part.function_call:
-                    fn_name = part.function_call.name
-                    fn_args = dict(part.function_call.args) if part.function_call.args else {}
-                    handler = FUNCTION_HANDLERS.get(fn_name)
-                    if handler:
-                        try:
-                            results = await handler(**fn_args)
-                            for r in results:
-                                all_resources.append(Resource(**r))
-                        except Exception:
-                            pass  # Skip failed function calls gracefully
+            # Process function calls from the model response
+            if response.candidates and response.candidates[0].content:
+                for part in response.candidates[0].content.parts:
+                    if part.function_call:
+                        fn_name = part.function_call.name
+                        fn_args = dict(part.function_call.args) if part.function_call.args else {}
+                        handler = FUNCTION_HANDLERS.get(fn_name)
+                        if handler:
+                            try:
+                                results = await handler(**fn_args)
+                                for r in results:
+                                    all_resources.append(Resource(**r))
+                            except Exception:
+                                pass  # Skip failed function calls gracefully
+        except Exception as e:
+            print(f"Tool calling skipped (model may not support it): {e}")
+            pass
 
         # If model didn't call tools, generate fallback resources
         if not all_resources:

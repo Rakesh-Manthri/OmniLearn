@@ -184,21 +184,40 @@ export default function CourseGeneratorPage() {
 
       {/* Generated Syllabus Tree */}
       {result && result.modules && (
-        <div className="flex flex-col gap-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-xl font-bold text-foreground">
-                {result.course_name}
-              </h3>
-              <p className="text-sm text-muted-foreground">
-                {result.target_audience} · {result.difficulty_level} · {result.modules.length} modules
-              </p>
+        <div className="flex flex-col gap-6">
+          {/* Course Banner */}
+          <div className="relative rounded-2xl border border-border bg-card overflow-hidden">
+            {/* Subtle top accent */}
+            <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-primary via-accent to-primary/30" />
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-6 pt-7 pb-5">
+              <div className="flex-1 min-w-0">
+                <h3 className="text-2xl font-bold text-foreground leading-tight" style={{ fontFamily: 'var(--font-heading)' }}>
+                  {result.course_name}
+                </h3>
+                <p className="text-sm text-muted-foreground mt-1.5">
+                  {result.target_audience}
+                </p>
+              </div>
+              <div className="flex items-center gap-2 flex-shrink-0 flex-wrap">
+                <Badge variant="outline" className="rounded-lg px-3 py-1 text-[11px] font-semibold border-border text-muted-foreground">
+                  {result.difficulty_level}
+                </Badge>
+                <Badge variant="outline" className="rounded-lg px-3 py-1 text-[11px] font-semibold border-border text-muted-foreground">
+                  {result.modules.length} Weeks
+                </Badge>
+                {result.course_id && (
+                  <Badge variant="outline" className="rounded-lg px-3 py-1 text-[11px] font-semibold bg-emerald-500/8 text-emerald-600 border-emerald-500/20 dark:text-emerald-400">
+                    ✓ Saved
+                  </Badge>
+                )}
+              </div>
             </div>
-            {result.course_id && (
-              <Badge variant="outline" className="bg-emerald-500/10 text-emerald-400 border-emerald-500/30">
-                ✓ Saved to Database
-              </Badge>
-            )}
+            {/* Module progress dots */}
+            <div className="flex items-center gap-1.5 px-6 pb-5">
+              {result.modules.map((_: any, i: number) => (
+                <div key={i} className="h-1.5 flex-1 rounded-full bg-primary/15" />
+              ))}
+            </div>
           </div>
 
           <SyllabusTree

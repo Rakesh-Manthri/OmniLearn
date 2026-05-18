@@ -165,6 +165,8 @@ async def fetch_resources(request: FetchResourcesRequest):
 
         return {"resources": resource_dicts}
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         raise HTTPException(
             status_code=500,
             detail=f"Resource fetching failed: {str(e)}",
